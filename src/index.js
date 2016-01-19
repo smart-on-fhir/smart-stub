@@ -18,7 +18,11 @@ app.use( cors() )
 
 //web page to kick things off
 app.get("/", (req, res) => {
-	res.sendFile(path.join(__dirname, "../client.html"))
+	res.sendFile(path.join(__dirname, "../client/index.html"))
+})
+
+app.get("/pure-min.css", (req, res) => {
+	res.sendFile(path.join(__dirname, "../client/pure-min.css"))
 })
 
 //stubs smart oauth requests
