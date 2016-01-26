@@ -35,7 +35,7 @@
 		var proxyUrl = document.getElementById("smart-server-url").value
 		var patientId = document.getElementById("sample-patient-id").value
 		var launchId = btoa(JSON.stringify({typ:"JWT", alg: "none"})) + "." + btoa(JSON.stringify({
-		   "patient": "1551992",
+		   "patient": patientId,
 		   "need_patient_banner": true,
 		   "smart_style_url": "https://gallery-styles.smarthealthit.org/styles/v1.2.12"
 		}))  + ".";
