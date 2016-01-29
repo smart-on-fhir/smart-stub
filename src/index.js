@@ -7,7 +7,10 @@ var reverseProxy = require ("./reverse-proxy")
 var port = (process.argv[2] || "3000")
 
 var config = {
-	fhirServer: "https://fhir-open-api-dstu2.smarthealthit.org",
+	fhirServer: {
+		"dstu1": "https://fhir-open-api-dstu1.smarthealthit.org",
+		"dstu2": "https://fhir-open-api-dstu2.smarthealthit.org"
+	},
 	baseUrl: `http://localhost:${port}/smart`,
 	jwtSecret: "thisisasecret"
 }
@@ -26,10 +29,12 @@ app.get("/pure-min.css", (req, res) => {
 })
 
 //stubs smart oauth requests
-app.use( "/smart", smartAuth(config) )
+app.use( "/smart/dstu1", smartAuth(config) )
+app.use( "/smart/dstu2", smartAuth(config) )
 
 //reverse proxies requests to config.fhirServer and fixes urls
-app.use( "/smart", reverseProxy(config) )
+app.use( "/smart/dstu1", reverseProxy(config, 'dstu1') )
+app.use( "/smart/dstu2", reverseProxy(config, 'dstu2') )
 
 module.exports = app
 

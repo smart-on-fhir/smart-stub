@@ -2,7 +2,7 @@ var request    = require("request")
 var jwt        = require("jsonwebtoken")
 var replStream = require("replacestream")
 
-module.exports = (config) => {
+module.exports = (config, version) => {
 
 	//require("request").debug = true
 	return (req, res) => {
@@ -27,7 +27,7 @@ module.exports = (config) => {
 			gzip: true
 		}
 
-		options.url = config.fhirServer + req.url
+		options.url = config.fhirServer[version] + req.url
 
 		if (req.headers.authorization) {
 			//this is probably too naive
@@ -39,7 +39,7 @@ module.exports = (config) => {
 
 		request(options)
 			//fix absolute urls in response
-			.pipe(replStream(config.fhirServer, config.baseUrl))
+			.pipe(replStream(config.fhirServer[version], config.baseUrl + '/' + version))
 			.pipe(res)
 
 	}

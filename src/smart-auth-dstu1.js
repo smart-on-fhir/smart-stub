@@ -8,7 +8,7 @@ module.exports = (config) => {
 
 	router.get("/metadata", (req, res) => {
 
-		var url = config.fhirServer + "/metadata"
+		var url = config.fhirServer.dstu1 + "/metadata"
         var acceptsJSON = req.headers.accept.indexOf('json') >= 0
 
         if (acceptsJSON) {
@@ -18,16 +18,30 @@ module.exports = (config) => {
 			}, (error, response, body) => {
 			    if (!error && response.statusCode === 200) {
 			    	var conformance = body
-					conformance.rest[0].security['extension'] = [{
-				      "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
-					  "extension": [{
-				        "url": "authorize",
-				        "valueUri": config.baseUrl + "/authorize"
-				      },{
-				        "url": "token",
-				        "valueUri": config.baseUrl + "/token"
-				      }]
-					}]
+					conformance.rest[0].security = {
+				        "extension": [
+				          {
+				            "url": "http://fhir-registry.smarthealthit.org/Profile/oauth-uris#authorize",
+				            "valueUri": config.baseUrl + "/dstu1/authorize"
+				          },
+				          {
+				            "url": "http://fhir-registry.smarthealthit.org/Profile/oauth-uris#token",
+				            "valueUri": config.baseUrl + "/dstu1/token"
+				          }
+				        ],
+				        "service": [
+				          {
+				            "coding": [
+				              {
+				                "system": "http://hl7.org/fhir/vs/restful-security-service",
+				                "code": "OAuth2"
+				              }
+				            ],
+				            "text": "OAuth version 2 (see oauth.net)."
+				          }
+				        ],
+				        "description": "SMART on FHIR uses OAuth2 for authorization"
+				      }
 					res.type("application/json+fhir")
 					res.send(conformance)
 			    }
@@ -37,7 +51,7 @@ module.exports = (config) => {
 			    if (!error && response.statusCode === 200) {
 					var parseString = xml2js.parseString
 					parseString(body, (err, result) => {
-					    result.Conformance.rest[0].security[0]['extension'] = [
+					    result.Conformance.rest[0].security = [
 					      {
 					         "$": {
 					            "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris"
@@ -50,7 +64,7 @@ module.exports = (config) => {
 					               "valueUri": [
 					                  {
 					                     "$": {
-					                        "value": config.baseUrl + "/authorize"
+					                        "value": config.baseUrl + "/dstu1/authorize"
 					                     }
 					                  }
 					               ]
@@ -62,7 +76,7 @@ module.exports = (config) => {
 					               "valueUri": [
 					                  {
 					                     "$": {
-					                        "value": config.baseUrl + "/token"
+					                        "value": config.baseUrl + "/dstu1/token"
 					                     }
 					                  }
 					               ]
