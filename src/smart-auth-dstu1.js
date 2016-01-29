@@ -98,11 +98,13 @@ module.exports = (config) => {
 	})
 
 	router.get("/authorize", (req, res) => {
-		var incomingJwt = req.query.launch.replace(/=/g, "")
+		var scope = req.query.scope
+		var launch = scope.split(' ').find((s) => {return s.indexOf("launch:") == 0}).split(':')[1]
+		var incomingJwt = launch.replace(/=/g, "")
 		var code = {
 			context: jwt.decode(incomingJwt),
 			client_id: req.query.client_id,
-			scope: req.query.scope
+			scope: scope
 		}
 		var state = req.query.state
 		var signedCode = jwt.sign(code, config.jwtSecret, {expiresIn: "5m"})
