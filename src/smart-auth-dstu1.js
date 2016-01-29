@@ -98,7 +98,7 @@ module.exports = (config) => {
 	})
 
 	router.get("/authorize", (req, res) => {
-		if (req.query.aud != config.baseUrl) {
+		if (req.query.aud != config.baseUrl+'/dstu1') {
 			//TODO: follow oauth spec here
 			return res.send("Bad audience value", 400)
 		}
