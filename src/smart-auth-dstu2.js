@@ -29,7 +29,7 @@ module.exports = (config) => {
 				      }]
 					}]
 					res.type("application/json+fhir")
-					res.send(conformance)
+					res.send(JSON.stringify(conformance).replace(config.fhirServer['dstu2'], config.baseUrl + '/' + version))
 			    }
 			})
 		} else {
@@ -75,7 +75,7 @@ module.exports = (config) => {
 					    var xml = builder.buildObject(result)
 
 					    res.type("application/xml+fhir")
-					    res.send(xml)
+					    res.send(xml.replace(config.fhirServer['dstu2'], config.baseUrl + '/' + version))
 					})
 			    }
 			})
