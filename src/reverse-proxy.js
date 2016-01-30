@@ -37,6 +37,13 @@ module.exports = (config, version) => {
 
 		console.log(`PROXY: ${options.url}`)
 
+        var accept = req.headers['accept']
+        if (accept && accept.indexOf('json') >= 0) {
+            res.type("application/json+fhir")
+        } else {
+            res.type("application/xml+fhir")
+        }
+
 		request(options)
 			//fix absolute urls in response
 			.pipe(replStream(config.fhirServer[version], config.baseUrl + '/' + version))
