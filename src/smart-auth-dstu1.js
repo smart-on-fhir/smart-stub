@@ -43,7 +43,7 @@ module.exports = (config) => {
 				        "description": "SMART on FHIR uses OAuth2 for authorization"
 				      }
 					res.type("application/json+fhir")
-					res.send(JSON.stringify(conformance).replace(config.fhirServer['dstu1'], config.baseUrl + '/' + version))
+					res.send(JSON.stringify(conformance).replace(config.fhirServer['dstu1'], config.baseUrl + '/dstu1'))
 			    }
 			})
 		} else {
@@ -89,7 +89,7 @@ module.exports = (config) => {
 					    var xml = builder.buildObject(result)
 
 					    res.type("application/xml+fhir")
-					    res.send(xml.replace(config.fhirServer['dstu1'], config.baseUrl + '/' + version))
+					    res.send(xml.replace(config.fhirServer['dstu1'], config.baseUrl + '/dstu1'))
 					})
 			    }
 			})
