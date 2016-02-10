@@ -86,6 +86,7 @@ module.exports = (config) => {
 	router.get("/authorize", (req, res) => {
 		if (req.query.aud != config.baseUrl+'/dstu2') {
 			//TODO: follow oauth spec here
+			console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl+'/dstu2)')
 			return res.send("Bad audience value", 400)
 		}
 		var incomingJwt = req.query.launch.replace(/=/g, "")
