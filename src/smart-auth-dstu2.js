@@ -6,6 +6,13 @@ var xml2js     = require('xml2js')
 
 module.exports = (config) => {
 
+	function normalizeURL (url) {
+		if (url.endsWith('/')) {
+			url = url.substring(0, url.length-1)
+		}
+		return url.toLowerCase()
+	}
+
 	router.get("/metadata", (req, res) => {
 
 		var url = config.fhirServer.dstu2 + "/metadata"
@@ -84,7 +91,7 @@ module.exports = (config) => {
 	})
 
 	router.get("/authorize", (req, res) => {
-		if (req.query.aud != config.baseUrl+'/dstu2') {
+		if (normalizeURL(req.query.aud) != normalizeURL(config.baseUrl+'/dstu2')) {
 			//TODO: follow oauth spec here
 			console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl+'/dstu2)')
 			return res.send("Bad audience value", 400)
