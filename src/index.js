@@ -1,9 +1,10 @@
 var express = require("express")
 var cors    = require("cors")
 var path    = require("path")
+var morgan  = require('morgan')
 var smartAuthDSTU1    = require("./smart-auth-dstu1")
 var smartAuthDSTU2    = require("./smart-auth-dstu2")
-var reverseProxy = require ("./reverse-proxy")
+var reverseProxy      = require ("./reverse-proxy")
 
 var port = (process.argv[2] || "3000")
 
@@ -18,7 +19,8 @@ var config = {
 
 var app = express()
 
-app.use( cors() )
+app.use(cors())
+app.use(morgan('dev'))
 
 //web page to kick things off
 app.get("/", (req, res) => {
