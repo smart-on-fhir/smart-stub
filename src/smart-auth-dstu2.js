@@ -96,9 +96,9 @@ module.exports = (config) => {
 			console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl+'/dstu2)')
 			return res.send("Bad audience value", 400)
 		}
-		var incomingJwt = req.query.launch.replace(/=/g, "")
+		var incomingJwt = req.query.launch && req.query.launch.replace(/=/g, "")
 		var code = {
-			context: jwt.decode(incomingJwt),
+			context: incomingJwt && jwt.decode(incomingJwt) || {},
 			client_id: req.query.client_id,
 			scope: req.query.scope
 		}
