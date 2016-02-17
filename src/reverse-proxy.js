@@ -20,9 +20,10 @@ module.exports = (config, version) => {
 		var h2 = Object.assign({}, req.headers)
 		delete h2["host"]
 		h2["content-type"] = "application/json"
+		var body = (req.method === "POST" || req.method === "PUT") ? req.body : undefined
 		var options = {
 			method: req.method, 
-			body:req.body,
+			body:body,
 			headers: h2,
 			gzip: true
 		}

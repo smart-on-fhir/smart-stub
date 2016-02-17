@@ -22,7 +22,6 @@ var app = express()
 
 app.use(cors())
 app.use(logger('dev'))
-app.use(bodyParser.raw({type:'*/*'}))
 
 //web page to kick things off
 app.get("/", (req, res) => {
@@ -38,8 +37,8 @@ app.use( "/smart/dstu1", smartAuthDSTU1(config) )
 app.use( "/smart/dstu2", smartAuthDSTU2(config) )
 
 //reverse proxies requests to config.fhirServer and fixes urls
-app.use( "/smart/dstu1", reverseProxy(config, 'dstu1') )
-app.use( "/smart/dstu2", reverseProxy(config, 'dstu2') )
+app.use( "/smart/dstu1", bodyParser.raw({type:'*/*'}), reverseProxy(config, 'dstu1') )
+app.use( "/smart/dstu2", bodyParser.raw({type:'*/*'}), reverseProxy(config, 'dstu2') )
 
 module.exports = app
 
