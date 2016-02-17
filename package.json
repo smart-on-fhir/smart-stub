@@ -19,7 +19,8 @@
     "replacestream": "^4.0.0",
     "request": "^2.65.0",
     "xml2js": "^0.4.16",
-    "morgan": "^1.6.1"
+    "morgan": "^1.6.1",
+    "body-parser": "^1.15.0"
   },
   "devDependencies": {
     "babel": "^5.8.23",
