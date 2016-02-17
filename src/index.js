@@ -7,7 +7,7 @@ var smartAuthDSTU1    = require("./smart-auth-dstu1")
 var smartAuthDSTU2    = require("./smart-auth-dstu2")
 var reverseProxy      = require ("./reverse-proxy")
 
-var port = (process.argv[2] || "3000")
+var port = (process.argv[2] || "3055")
 
 var config = {
 	fhirServer: {
