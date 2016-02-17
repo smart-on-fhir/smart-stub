@@ -14,7 +14,7 @@ var config = {
 		"dstu1": "https://fhir-open-api-dstu1.smarthealthit.org",
 		"dstu2": "https://fhir-open-api-dstu2.smarthealthit.org"
 	},
-	baseUrl: `http://localhost:${port}/smart`,
+	baseUrl: 'https://stub.smarthealthit.org/smart',
 	jwtSecret: "thisisasecret"
 }
 
