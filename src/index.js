@@ -10,15 +10,12 @@ var smartMetadata = require("./smart-metadata");
 var reverseProxy = require("./reverse-proxy");
 var config = require("./config");
 
-
 var app = express();
 
 app.use(cors());
 app.use(logger('dev'));
 
-//stubs smart oauth requests
 app.use("/api/oauth", smartAuth);
-
 app.use("/api/fhir", smartMetadata);
 app.use(
   "/api/fhir",

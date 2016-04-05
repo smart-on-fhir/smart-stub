@@ -17,9 +17,9 @@ function normalizeURL(url) {
 }
 
 router.get("/authorize", function (req, res) {
-  if (normalizeURL(req.query.aud) != normalizeURL(config.baseUrl + '/dstu2')) {
+  if (normalizeURL(req.query.aud) != normalizeURL(config.baseUrl)) {
     //TODO: follow oauth spec here
-    console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl + '/dstu2)');
+    console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl + ')');
     return res.send("Bad audience value", 400);
   }
   var incomingJwt = req.query.launch && req.query.launch.replace(/=/g, "");
