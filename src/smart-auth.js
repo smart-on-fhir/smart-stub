@@ -25,7 +25,7 @@ function normalizeURL(url) {
 router.get("/authorize", function (req, res) {
   if (normalizeURL(req.query.aud) != normalizeURL(config.baseUrl + '/api/fhir')) {
     //TODO: follow oauth spec here
-    console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl + ')');
+    console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl + '/api/fhir)');
     return res.send("Bad audience value", 400);
   }
   var incomingJwt = req.query.launch && req.query.launch.replace(/=/g, "");
