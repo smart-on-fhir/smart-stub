@@ -1,55 +1,50 @@
-var request    = require("request")
-var jwt        = require("jsonwebtoken")
-var replStream = require("replacestream")
+"use strict";
 
-module.exports = (config, version) => {
+var request = require("request");
+var jwt = require("jsonwebtoken");
+var replStream = require("replacestream");
+var config = require("./config.js");
 
-	//require("request").debug = true
-	return (req, res) => {
-		var token = null
+module.exports = function (req, res) {
+  var token = null;
 
-		if (req.headers.authorization) {
-			token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret)
-			
-			//TODO: follow oauth spec here
-			if (token.exp >= new Date()) {
-				return res.send("expired token", 401)
-			}
-		}
+  if (req.headers.authorization) {
+    token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret);
 
-		var h2 = Object.assign({}, req.headers)
-		delete h2["host"]
-		h2["content-type"] = "application/json"
-		var body = (req.method === "POST" || req.method === "PUT") ? req.body : undefined
-		var options = {
-			method: req.method, 
-			body:body,
-			headers: h2,
-			gzip: true
-		}
+    //TODO: follow oauth spec here
+    if (token.exp >= new Date()) {
+      return res.send("expired token", 401);
+    }
+  }
 
-		options.url = config.fhirServer[version] + req.url
+  var h2 = Object.assign({}, req.headers);
+  delete h2["host"];
+  h2["content-type"] = "application/json";
+  var body = req.method === "POST" || req.method === "PUT" ? req.body : undefined;
+  var options = {
+    method: req.method,
+    body: body,
+    headers: h2,
+    gzip: true
+  };
 
-		if (req.headers.authorization) {
-			//this is probably too naive
-			options.url += (req.url.indexOf("?") > -1 ? "&" : "?") +
-				"patient=" + token.patient
-		}
+  options.url = config.fhirServer + req.url;
 
-		console.log(`PROXY: ${options.url}`)
+  if (req.headers.authorization) {
+    //this is probably too naive
+    options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + token.patient;
+  }
 
-        var accept = req.headers['accept']
-        if (accept && accept.indexOf('json') >= 0) {
-            res.type("application/json+fhir")
-        } else {
-            res.type("application/xml+fhir")
-        }
+  console.log("PROXY: " + options.url);
 
-		request(options)
-			//fix absolute urls in response
-			.pipe(replStream(config.fhirServer[version], config.baseUrl + '/' + version))
-			.pipe(res)
+  var accept = req.headers['accept'];
+  if (accept && accept.indexOf('json') >= 0) {
+    res.type("application/json+fhir");
+  } else {
+    res.type("application/xml+fhir");
+  }
 
-	}
-
-}
+  request(options)
+  //fix absolute urls in response
+  .pipe(replStream(config.fhirServer, config.baseUrl + '/smart/api')).pipe(res);
+};

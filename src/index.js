@@ -1,48 +1,35 @@
-var express = require("express")
-var cors    = require("cors")
-var path    = require("path")
-var logger  = require('morgan')
-var bodyParser = require('body-parser')
-var smartAuthDSTU1    = require("./smart-auth-dstu1")
-var smartAuthDSTU2    = require("./smart-auth-dstu2")
-var reverseProxy      = require ("./reverse-proxy")
+"use strict";
 
-var port = (process.argv[2] || "3055")
+var express = require("express");
+var cors = require("cors");
+var path = require("path");
+var logger = require('morgan');
+var bodyParser = require('body-parser');
+var smartAuth = require("./smart-auth");
+var smartMetadata = require("./smart-metadata");
+var reverseProxy = require("./reverse-proxy");
 
-var config = {
-	fhirServer: {
-		"dstu1": "https://fhir-open-api-dstu1.smarthealthit.org",
-		"dstu2": "https://fhir-open-api-dstu2.smarthealthit.org"
-	},
-	baseUrl: 'https://stub.smarthealthit.org/smart',
-	jwtSecret: "thisisasecret"
-}
+var port = process.argv[2] || "3055";
 
-var app = express()
+var app = express();
 
-app.use(cors())
-app.use(logger('dev'))
-
-//web page to kick things off
-app.get("/", (req, res) => {
-	res.sendFile(path.join(__dirname, "../client/index.html"))
-})
-
-app.get("/pure-min.css", (req, res) => {
-	res.sendFile(path.join(__dirname, "../client/pure-min.css"))
-})
+app.use(cors());
+app.use(logger('dev'));
 
 //stubs smart oauth requests
-app.use( "/smart/dstu1", smartAuthDSTU1(config) )
-app.use( "/smart/dstu2", smartAuthDSTU2(config) )
+app.use("/api/oauth", smartAuth);
 
-//reverse proxies requests to config.fhirServer and fixes urls
-app.use( "/smart/dstu1", bodyParser.raw({type:'*/*'}), reverseProxy(config, 'dstu1') )
-app.use( "/smart/dstu2", bodyParser.raw({type:'*/*'}), reverseProxy(config, 'dstu2') )
+app.use("/api/fhir", smartMetadata);
+app.use(
+  "/api/fhir",
+  bodyParser.raw({ type: '*/*' }),
+  reverseProxy);
 
-module.exports = app
+app.use(express.static('static'));
+
+module.exports = app;
 
 if (!module.parent) {
-	app.listen(port)
-	console.log(`Proxy server running on localhost on port ${port}`)
+  app.listen(port);
+  console.log("Proxy server running on localhost on port " + port);
 }
