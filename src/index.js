@@ -9,7 +9,6 @@ var smartAuth = require("./smart-auth");
 var smartMetadata = require("./smart-metadata");
 var reverseProxy = require("./reverse-proxy");
 
-var port = process.argv[2] || "3055";
 
 var app = express();
 
@@ -30,6 +29,6 @@ app.use(express.static('static'));
 module.exports = app;
 
 if (!module.parent) {
-  app.listen(port);
-  console.log("Proxy server running on localhost on port " + port);
+  app.listen(config.port);
+  console.log("Proxy server running on localhost on port " + config.port);
 }
