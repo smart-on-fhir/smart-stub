@@ -9,10 +9,11 @@ var config = require('./config');
 
 module.exports = router;
 
-// Need polyfill for older Node.js implementations
+// Need polyfills for older Node.js implementations
 String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
+Object.assign = require('object-assign');
 
 function normalizeURL(url) {
   if (url.endsWith('/')) {
