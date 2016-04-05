@@ -55,6 +55,9 @@ request({
   if (!error && response.statusCode === 200) {
     var parseString = xml2js.parseString;
     parseString(body, function (err, result) {
+      if (!result.Conformance.rest[0].security){
+        result.Conformance.rest[0].security = [{}]
+      }
       result.Conformance.rest[0].security[0]['extension'] = [{
         "$": {
           "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris"
