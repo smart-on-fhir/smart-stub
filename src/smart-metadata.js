@@ -46,7 +46,12 @@ request({
   }
 });
 
-request(metadataUrl, function (error, response, body) {
+request({
+  url: metadataUrl,
+  headers: {
+    'Accept': 'application/xml+fhir'
+  }
+}, function (error, response, body) {
   if (!error && response.statusCode === 200) {
     var parseString = xml2js.parseString;
     parseString(body, function (err, result) {
