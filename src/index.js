@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var smartAuth = require("./smart-auth");
 var smartMetadata = require("./smart-metadata");
 var reverseProxy = require("./reverse-proxy");
+var config = require("./config");
 
 
 var app = express();
