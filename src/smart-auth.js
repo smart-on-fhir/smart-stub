@@ -9,6 +9,11 @@ var config = require('./config');
 
 module.exports = router;
 
+// Need polyfill for older Node.js implementations
+String.prototype.endsWith = function(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+};
+
 function normalizeURL(url) {
   if (url.endsWith('/')) {
     url = url.substring(0, url.length - 1);
@@ -17,7 +22,7 @@ function normalizeURL(url) {
 }
 
 router.get("/authorize", function (req, res) {
-  if (normalizeURL(req.query.aud) != normalizeURL(config.baseUrl)) {
+  if (normalizeURL(req.query.aud) != normalizeURL(config.baseUrl + '/api/fhir')) {
     //TODO: follow oauth spec here
     console.log("Bad AUD value: " + req.query.aud + " (expecting " + config.baseUrl + ')');
     return res.send("Bad audience value", 400);
