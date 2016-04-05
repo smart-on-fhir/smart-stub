@@ -46,5 +46,5 @@ module.exports = function (req, res) {
 
   request(options)
   //fix absolute urls in response
-  .pipe(replStream(config.fhirServer, config.baseUrl + '/smart/api')).pipe(res);
+  .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir')).pipe(res);
 };
