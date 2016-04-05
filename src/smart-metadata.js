@@ -27,6 +27,9 @@ request({
 }, function (error, response, body) {
   if (!error && response.statusCode === 200) {
     var conformance = body;
+    if (!conformance.rest[0].security){
+      conformance.rest[0].security = {}
+    }
     conformance.rest[0].security['extension'] = [{
       "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
       "extension": [{
