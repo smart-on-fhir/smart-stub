@@ -12,7 +12,7 @@ module.exports = router;
 
 // Need polyfills for older Node.js implementations
 String.prototype.endsWith = function(suffix) {
-    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+  return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
 Object.assign = require('object-assign');
 
@@ -22,6 +22,47 @@ function normalizeURL(url) {
   }
   return url.toLowerCase();
 }
+
+var needScope = function(target){
+  return function(req, res, next){
+    var token;
+
+    if (!req.headers.authorization) {
+      return next("No authorization token");
+    }
+
+    token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret);
+    if (token.exp >= new Date()) {
+      return next("expired token", 401);
+    }
+
+    if (token.scope.split(/\s+/).filter(function(s){ return s === target; }).length !== 1){
+      return next(token.scope + " doesn't have one element = " + target);
+    }
+
+    return next();
+  }
+}
+
+var jsonParser = bodyParser.json()
+
+// TODO : extract a shared code-generator, taking just "params"
+router.post("/code", jsonParser, needScope("smart/portal"), function(req, res, next){
+  var client_id = req.body.client_id;
+  var scope = req.body.scope;
+  var patient = req.body.patient;
+
+  var signedCode = jwt.sign({
+    client_id: req.body.client_id,
+    patient: patient,
+    scope: scope
+  }, config.jwtSecret, { expiresIn: "5m" });
+
+  res.json({
+    code:signedCode
+  });
+
+});
 
 router.get("/authorize", function (req, res, next) {
   if (normalizeURL(req.query.aud) != normalizeURL(config.baseUrl + '/api/fhir')) {
