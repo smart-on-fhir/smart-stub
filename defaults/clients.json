@@ -3,11 +3,22 @@
   "client_name": "Demo SMART App",
   "client_uri": "https://gallery.smarthealthit.org",
   "scope": "patient/*.read",
-  "client_secret": "my-web-app-secret-123",
   "redirect_uris": [
     "http://localhost:8000/fhir-app/"
   ],
   "response_types": ["code"],
   "grant_types": ["authorization_code"],
   "token_endpoint_auth_method": "none"
+}, {
+  "client_id": "my_confidential_web_app",
+  "client_name": "Demo SMART App",
+  "client_uri": "https://gallery.smarthealthit.org",
+  "scope": "patient/*.read",
+  "client_secret": "my-web-app-secret-123",
+  "redirect_uris": [
+    "http://localhost:8000/fhir-app/"
+  ],
+  "response_types": ["code"],
+  "grant_types": ["authorization_code"],
+  "token_endpoint_auth_method": "client_secret_basic"
 }]

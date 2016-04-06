@@ -55,7 +55,6 @@ router.get("/authorize", function (req, res, next) {
 });
 
 router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res, next) {
-  console.log("Requesting token", req.body, req.headers)
   var grantType = req.body.grant_type;
   var codeRaw;
   var grant;
