@@ -43,8 +43,9 @@ function FileMethod(file){
     function lookup(req){
       var basic = basicAuth(req) || {};
       var id = basic.name || req.query.client_id || req.body.client_id;
-      if(values[id])
+      if(values[id]){
         return Promise.resolve(values[id]);
+      }
       return Promise.reject("No such client: " + id);
     }
 
