@@ -7,8 +7,8 @@ module.exports = {
   jwtSecret: process.env.SECRET || "thisisasecret",
   port: process.env.PORT || "3055",
   clientService: clientService(
-    process.env.CLIENT_LOOKUP_METHOD || "file"), # "file" or "none"
+    process.env.CLIENT_LOOKUP_METHOD || "file"), // "file" or "none"
   userService: userService(
-    process.env.USER_AUTHENTICATION_METHOD || "file"), # "file" or "none"
+    process.env.USER_AUTHENTICATION_METHOD || "file"), // "file" or "none"
 };
 
