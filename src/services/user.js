@@ -6,9 +6,7 @@ module.exports = function(method){
   }
 
   if (method === "file"){
-    return FileMethod(
-      process.env.CLIENT_DEFINITIONS_FILE ||
-        path.join(__dirname, "..", "..", "defaults", "users.json"));
+    return FileMethod( path.join(__dirname, "..", "..", "defaults", "users.json"));
   }
 
   throw "Unrecognized user authentication method: " + method;

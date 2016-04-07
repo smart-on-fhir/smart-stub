@@ -7,9 +7,7 @@ module.exports = function(method){
   }
 
   if (method === "file"){
-    return FileMethod(
-      process.env.CLIENT_DEFINITIONS_FILE ||
-        path.join(__dirname, "..", "..", "defaults", "clients.json"));
+    return FileMethod( path.join(__dirname, "..", "..", "defaults", "clients.json"));
   }
 
   throw "Unrecognized client authentication method: " + method;
