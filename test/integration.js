@@ -9,6 +9,8 @@ var url = require('url');
 
 describe('auth service', function() {
   var listening;
+  var portalToken;
+  var issuedCode;
 
   before(function() {
     listening = server.listen(3000);
@@ -18,8 +20,8 @@ describe('auth service', function() {
     listening.close();
   });
 
-  it('gives a token when user and app are valid', function(done) {
-    fetch('http://localhost:3000/api/oauth/token', {
+  it('issues a token when user and app are valid', function() {
+    return fetch('http://localhost:3000/api/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -28,15 +30,20 @@ describe('auth service', function() {
         username: "demo",
         password: "demo",
         grant_type: "password",
+        scope: "smart/portal",
         client_id: "my_web_app"
       })
     }).then(function(response){
-      assert(response.status === 200);
-      done()
+      assert.equal(response.status, 200);
+      return response.json();
+    }).then(function(token){
+      assert.equal(token.scope, "smart/portal");
+      console.log(token)
+      portalToken = token;
     })
   });
 
-  it('gives a token when code and app are valid', function() {
+  it('issues a token when code and app are valid', function() {
     return fetch('http://localhost:3000/api/oauth/token', {
       method: 'POST',
       headers: {
@@ -45,7 +52,7 @@ describe('auth service', function() {
       body: querystring.stringify({
         code: jwt.sign({
           client_id: 'my_web_app',
-          scope: 'patient/*.read fake abd',
+          scope: 'patient/*.read',
           user: 'Patient/99912345',
           context: {
             patient: '99912345'
@@ -58,14 +65,14 @@ describe('auth service', function() {
       assert.equal(response.status, 200);
       return response.json().then(function(token){
         var verified = jwt.verify(token.access_token, config.jwtSecret)
-        assert.equal(verified.token.scope, 'patient/*.read')
+        assert.equal(verified.claims.scope, 'patient/*.read')
         console.log("VERIFIED", verified)
         assert.equal(token.patient, '99912345')
       })
     })
   });
 
-  it('gives no token when client is invalid', function(done) {
+  it('issues no token when client is invalid', function(done) {
     fetch('http://localhost:3000/api/oauth/token', {
       method: 'POST',
       headers: {
@@ -83,7 +90,7 @@ describe('auth service', function() {
     })
   });
 
-  it('gives no token when user is invalid', function(done) {
+  it('issues no token when user is invalid', function(done) {
     fetch('http://localhost:3000/api/oauth/token', {
       method: 'POST',
       headers: {
@@ -101,17 +108,12 @@ describe('auth service', function() {
     })
   });
 
-  it('issues a code when smart/portal scope is present', function(done){
-    fetch('http://localhost:3000/api/oauth/code', {
+  it('issues a code when we use our portal access token', function(){
+    return fetch('http://localhost:3000/api/oauth/code', {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + jwt.sign({
-          scope: 'badness and smart/portal works',
-          grant: {
-            user: 'Patient/99912345'
-          }
-        }, config.jwtSecret, { expiresIn: "5m" })
+          'Authorization': 'Bearer ' + portalToken.access_token
       },
       body: JSON.stringify({
         client_id: 'my_web_app',
@@ -124,18 +126,73 @@ describe('auth service', function() {
       return response.json();
     }).then(function(j){
       assert(j.code.length > 100);
-      done();
+      issuedCode = j.code;
     });
   })
 
-  it('fails ot issue a code when smart/portal scope is missing', function(done){
-    fetch('http://localhost:3000/api/oauth/code', {
+  it('issues a token when our issued code is used', function() {
+    return fetch('http://localhost:3000/api/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: querystring.stringify({
+        code: issuedCode,
+        grant_type: "authorization_code",
+        client_id: "my_web_app"
+      })
+    }).then(function(response){
+      assert.equal(response.status, 200);
+      return response.json().then(function(token){
+        var verified = jwt.verify(token.access_token, config.jwtSecret)
+        assert.equal(verified.claims.scope, 'patient/*.read')
+        console.log("VERIFIED", verified)
+      })
+    })
+  });
+
+ 
+  it('issues a code when we synthesize an access token with smart/portal scope', function(){
+    return fetch('http://localhost:3000/api/oauth/code', {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + jwt.sign({
-          scope: 'badness and fails'
-        }, config.jwtSecret, { expiresIn: "5m" })
+          claims: {
+            scope: 'goodness and smart/portal',
+          },
+          grant: {
+            user: 'Patient/99912345'
+          }
+         }, config.jwtSecret, { expiresIn: "5m" })
+      },
+      body: JSON.stringify({
+        client_id: 'my_web_app',
+        scope: 'patient/*.read',
+        context: {
+          patient: '99912345',
+        }
+      })
+    }).then(function(response){
+      return response.json();
+    }).then(function(j){
+      assert(j.code.length > 100);
+    });
+  })
+
+  it('refuses to issue a code with a synthesized access token missing the smart/portal scope', function(){
+    return fetch('http://localhost:3000/api/oauth/code', {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + jwt.sign({
+          claims: {
+            scope: 'badness and fails',
+          },
+          grant: {
+            user: 'Patient/99912345'
+          }
+         }, config.jwtSecret, { expiresIn: "5m" })
       },
       body: JSON.stringify({
         patient: '99912345',
@@ -143,13 +200,12 @@ describe('auth service', function() {
         scope: 'patient/*.read'
       })
     }).then(function(response){
-      assert(response.status > 400);
-      done()
+      assert.notEqual(response.status, 200);
     })
   })
 
-  it('fails the auto-authorize process', function(done){
-    fetch('http://localhost:3000/api/oauth/authorize' + url.format({query: {
+  it('fails the auto-authorize process', function(){
+    return fetch('http://localhost:3000/api/oauth/authorize' + url.format({query: {
       client_id: 'my_web_app',
       scope: 'my favorite scopes',
       state: 'abc',
@@ -157,29 +213,35 @@ describe('auth service', function() {
       aud: 'https://stub-dstu2.smarthealthit.org/api/fhir'
     }})).then(function(response){
       assert(response.status > 400);
-      done()
     })
   })
 
+
   describe('when client checking is disabled', function() {
-    var prev;
+    var prevClientService, prevSecurity;
 
     before(function() {
-      prev = config.clientService;
-      config.clientService = require('../src/client-service')('none');
+      prevClientService = config.clientService;
+      prevSecurity = config.disableSecurity;
+      config.clientService = require('../src/services/client')('none');
+      config.disableSecurity = true;
     });
 
     after(function() {
-      config.clientService = prev;
+      config.clientService = prevClientService;
+      config.disableSecurity = prevSecurity;
     });
 
-    it('fails /code', function(done){
-      fetch('http://localhost:3000/api/oauth/code', {
+    it('fails /code', function(){
+      return fetch('http://localhost:3000/api/oauth/code', {
         method: 'post',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + jwt.sign({
-            scope: 'smart/portal'
+            scope: 'smart/portal',
+            grant: {
+              user: 'Patient/99912345'
+            }
           }, config.jwtSecret, { expiresIn: "5m" })
         },
         body: JSON.stringify({
@@ -188,8 +250,7 @@ describe('auth service', function() {
           scope: 'patient/*.read'
         })
       }).then(function(response){
-        assert(response.status > 400);
-        done()
+        assert.notEqual(response.status, 200);
       })
     })
 
@@ -217,6 +278,73 @@ describe('auth service', function() {
       })
     })
 
+    it('allows end-to-end launch', function(){
+      var launchContext = jwt.sign({
+        context: {
+          patient: "99912345"
+        }
+      }, null, {
+        algorithm: "none"
+      });
+
+      return fetch('http://localhost:3000/api/oauth/authorize' + url.format({query: {
+        client_id: 'anything_goes',
+        scope: 'my favorite scopes',
+        state: 'abc',
+        redirect_uri: 'http://wherever-i-want.local',
+        aud: 'https://stub-dstu2.smarthealthit.org/api/fhir',
+        launch: launchContext
+      }}), {redirect: 'manual'}).then(function(response){
+        assert.equal(response.status, 302);
+        var redirect = url.parse(response.headers.get("location"), true);
+        assert.equal(redirect.host, "wherever-i-want.local");
+        assert.equal(redirect.query.state, "abc");
+        var code = redirect.query.code
+        var verified = jwt.verify(code, config.jwtSecret)
+        assert.deepEqual({
+          grant_type: 'authorization_code',
+          client_id: 'anything_goes',
+          scope: 'my favorite scopes',
+          context: {
+            patient: '99912345'
+          }
+        }, {
+          grant_type: verified.grant_type,
+          client_id: verified.client_id,
+          scope: verified.scope,
+          context: verified.context
+        })
+        return code;
+      }).then(function(code){
+        return fetch('http://localhost:3000/api/oauth/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: querystring.stringify({
+            grant_type: "authorization_code",
+            client_id: "anything_goes",
+            code: code
+          })
+        })
+      })
+      .then(function(response){
+        assert.equal(response.status, 200);
+        return response.json()
+      }).then(function(token){
+        assert.deepEqual({
+          token_type: 'Bearer',
+          scope: 'my favorite scopes',
+          patient: '99912345',
+          expires_in: 3600
+        }, {
+          token_type: token.token_type,
+          patient: token.patient,
+          scope: token.scope,
+          expires_in: token.expires_in
+        })
+      })
+    })
   });
 
 });

@@ -3,9 +3,9 @@ var cors = require("cors");
 var path = require("path");
 var logger = require('morgan');
 var bodyParser = require('body-parser');
-var smartAuth = require("./smart-auth");
-var smartMetadata = require("./smart-metadata");
-var reverseProxy = require("./reverse-proxy");
+var smartAuth = require("./smart/auth");
+var smartMetadata = require("./smart/metadata");
+var reverseProxy = require("./smart/reverse-proxy");
 
 var app = express();
 module.exports = app;

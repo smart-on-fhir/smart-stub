@@ -9,7 +9,7 @@ module.exports = function(method){
   if (method === "file"){
     return FileMethod(
       process.env.CLIENT_DEFINITIONS_FILE ||
-        path.join(__dirname, "..", "defaults", "clients.json"));
+        path.join(__dirname, "..", "..", "defaults", "clients.json"));
   }
 
   throw "Unrecognized client authentication method: " + method;
@@ -25,7 +25,6 @@ function NoneMethod(){
   }
 
   return {
-    enabled: false,
     lookup: lookup,
     check: lookup
   }
@@ -50,7 +49,6 @@ function FileMethod(file){
     }
 
     return {
-      enabled: true,
       lookup: lookup,
       check: function(req){
         return lookup(req)

@@ -3,7 +3,7 @@
 var request = require("request");
 var jwt = require("jsonwebtoken");
 var replStream = require("replacestream");
-var config = require("./config.js");
+var config = require("../config.js");
 
 module.exports = function (req, res) {
   var token = null;
