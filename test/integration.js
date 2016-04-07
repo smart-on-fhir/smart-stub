@@ -7,11 +7,12 @@ var jwt = require('jsonwebtoken');
 var config = require('../src/config');
 var url = require('url');
 
+var portalToken;
+var issuedCode;
+var appAccessToken;
+
 describe('auth service', function() {
   var listening;
-  var portalToken;
-  var issuedCode;
-
   before(function() {
     listening = server.listen(3000);
   });
@@ -113,7 +114,7 @@ describe('auth service', function() {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + portalToken.access_token
+        'Authorization': 'Bearer ' + portalToken.access_token
       },
       body: JSON.stringify({
         client_id: 'my_web_app',
@@ -130,7 +131,7 @@ describe('auth service', function() {
     });
   })
 
-  it('issues a token when our issued code is used', function() {
+  it('issues an app access token when our issued code is used', function() {
     return fetch('http://localhost:3000/api/oauth/token', {
       method: 'POST',
       headers: {
@@ -144,6 +145,7 @@ describe('auth service', function() {
     }).then(function(response){
       assert.equal(response.status, 200);
       return response.json().then(function(token){
+        appAccessToken =token;
         var verified = jwt.verify(token.access_token, config.jwtSecret)
         assert.equal(verified.claims.scope, 'patient/*.read')
         console.log("VERIFIED", verified)
@@ -151,7 +153,7 @@ describe('auth service', function() {
     })
   });
 
- 
+
   it('issues a code when we synthesize an access token with smart/portal scope', function(){
     return fetch('http://localhost:3000/api/oauth/code', {
       method: 'post',
@@ -164,7 +166,7 @@ describe('auth service', function() {
           grant: {
             user: 'Patient/99912345'
           }
-         }, config.jwtSecret, { expiresIn: "5m" })
+        }, config.jwtSecret, { expiresIn: "5m" })
       },
       body: JSON.stringify({
         client_id: 'my_web_app',
@@ -192,7 +194,7 @@ describe('auth service', function() {
           grant: {
             user: 'Patient/99912345'
           }
-         }, config.jwtSecret, { expiresIn: "5m" })
+        }, config.jwtSecret, { expiresIn: "5m" })
       },
       body: JSON.stringify({
         patient: '99912345',
@@ -348,3 +350,30 @@ describe('auth service', function() {
   });
 
 });
+
+
+describe('reverse proxy', function() {
+  before(function() {
+    listening = server.listen(3000);
+    config.fhirServer = 'http://localhost:3000'
+  });
+
+  after(function() {
+    listening.close();
+  });
+
+  it('uses a token when present', function(){
+    return fetch('http://localhost:3000/api/fhir/Patient?', {
+      method: 'get',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + appAccessToken.access_token
+      },
+    }).then(function(response){
+      //TODO this should be a 404. Stream issue.
+      assert.equal(response.status, 200)
+    });
+  })
+
+
+})

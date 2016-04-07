@@ -4,19 +4,9 @@ var request = require("request");
 var jwt = require("jsonwebtoken");
 var replStream = require("replacestream");
 var config = require("../config.js");
+var oauth = require("./oauth-helpers");
 
 module.exports = function (req, res) {
-  var token = null;
-
-  if (req.headers.authorization) {
-    token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret);
-
-    //TODO: follow oauth spec here
-    if (token.exp >= new Date()) {
-      return res.send("expired token", 401);
-    }
-  }
-
   var h2 = Object.assign({}, req.headers);
   delete h2["host"];
   h2["content-type"] = "application/json";
@@ -30,12 +20,10 @@ module.exports = function (req, res) {
 
   options.url = config.fhirServer + req.url;
 
-  if (req.headers.authorization) {
+  if (req.token.claims.patient) {
     //this is probably too naive
-    options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + token.patient;
+    options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + req.token.claims.patient;
   }
-
-  console.log("PROXY: " + options.url);
 
   var accept = req.headers['accept'];
   if (accept && accept.indexOf('json') >= 0) {
@@ -44,7 +32,8 @@ module.exports = function (req, res) {
     res.type("application/xml+fhir");
   }
 
-  request(options)
   //fix absolute urls in response
-  .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir')).pipe(res);
+  request(options)
+  .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir'))
+  .pipe(res);
 };
