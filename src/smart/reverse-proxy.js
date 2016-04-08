@@ -40,6 +40,8 @@ module.exports = function (req, res) {
   .on('response', function(r){
     res.status(r.statusCode);
     //TODO set headers like etag
+    res.set(r.headers)
+    res.removeHeader("Content-Encoding")
   })
   .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir'))
   .pipe(res);
