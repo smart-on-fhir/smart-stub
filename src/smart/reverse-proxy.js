@@ -38,7 +38,8 @@ module.exports = function (req, res) {
   //fix absolute urls in response
   request(options)
   .on('response', function(r){
-    res.writeHead(r.statusCode, r.headers);
+    res.status(r.statusCode);
+    res.set(r.headers);
   })
   .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir'))
   .pipe(res);
