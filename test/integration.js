@@ -370,8 +370,7 @@ describe('reverse proxy', function() {
         'Authorization': 'Bearer ' + appAccessToken.access_token
       },
     }).then(function(response){
-      //TODO this should be a 404. Stream issue.
-      assert.equal(response.status, 200)
+      assert.equal(response.status, 404)
     });
   })
 

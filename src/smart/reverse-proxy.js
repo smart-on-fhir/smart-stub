@@ -7,6 +7,9 @@ var config = require("../config.js");
 var oauth = require("./oauth-helpers");
 
 module.exports = function (req, res) {
+  if (!req.token){
+    return res.status(401).end();
+  }
   var h2 = Object.assign({}, req.headers);
   delete h2["host"];
   h2["content-type"] = "application/json";
@@ -34,6 +37,9 @@ module.exports = function (req, res) {
 
   //fix absolute urls in response
   request(options)
+  .on('response', function(r){
+    res.writeHead(r.statusCode, r.headers);
+  })
   .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir'))
   .pipe(res);
 };
