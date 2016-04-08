@@ -24,8 +24,11 @@ module.exports = function (req, res) {
   options.url = config.fhirServer + req.url;
 
   if (req.token.claims.patient) {
-    //this is probably too naive
-    options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + req.token.claims.patient;
+    //this is too naive
+    if (req.url.match(/^\/[^/?]+\/?(\?.*)?$/)) {
+      console.log("U",req.url)
+      options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + req.token.claims.patient;
+    }
   }
 
   var accept = req.headers['accept'];
