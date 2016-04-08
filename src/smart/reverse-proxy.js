@@ -15,16 +15,23 @@ module.exports = function (req, res) {
   var options = {
     method: req.method,
     body: body,
-    headers: h2
+    headers: h2,
+    gzip: true
   };
 
   options.url = config.fhirServer + req.url;
 
   if (req.token.claims.patient) {
-    //this is too naive
-    if (req.url.match(/^\/[^/?]+\/?(\?.*)?$/)) {
-      console.log("U",req.url)
+    // this is naive. Problems include:
+    // 1. Can access any resource directly by ID
+    // 2. Can access resources by chaining
+    // 3. Can access resources by include
+    // ...
+    if (req.url.match(/^\/(Condition|MedicationOrder|Observation|Immunization|Procedure|MedicationStatement)\/?(\?.*)?$/)) {
       options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + req.token.claims.patient;
+    }
+     if (req.url.match(/^\/Patient\/?(\?.*)?$/)) {
+      options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "_id=" + req.token.claims.patient;
     }
   }
 
