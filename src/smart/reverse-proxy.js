@@ -10,15 +10,12 @@ module.exports = function (req, res) {
   if (!req.token){
     return res.status(401).end();
   }
-  var h2 = Object.assign({}, req.headers);
-  delete h2["host"];
-  h2["content-type"] = "application/json";
+  var h2 = Object.assign({}, req.headers, {host: undefined});
   var body = req.method === "POST" || req.method === "PUT" ? req.body : undefined;
   var options = {
     method: req.method,
     body: body,
-    headers: h2,
-    gzip: true
+    headers: h2
   };
 
   options.url = config.fhirServer + req.url;
