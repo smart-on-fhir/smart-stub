@@ -39,7 +39,7 @@ module.exports = function (req, res) {
   request(options)
   .on('response', function(r){
     res.status(r.statusCode);
-    res.set(r.headers);
+    //TODO set headers like etag
   })
   .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir'))
   .pipe(res);
