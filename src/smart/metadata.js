@@ -21,10 +21,12 @@ router.get("/metadata", function (req, res) {
   }
 });
 
+
 request({
   url: metadataUrl,
   json: true
 }, function (error, response, body) {
+console.log("GEtting metadat", response.statusCode);
   if (!error && response.statusCode === 200) {
     var conformance = body;
     if (!conformance.rest[0].security){
@@ -34,10 +36,10 @@ request({
       "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
       "extension": [{
         "url": "authorize",
-        "valueUri": config.baseUrl + "/api/oauth/authorize"
+        "valueUri": config.authorizeUrl
       }, {
         "url": "token",
-        "valueUri": config.baseUrl + "/api/oauth/token"
+        "valueUri": config.tokenUrl
       }]
     }];
     jsonConformance = JSON.stringify(conformance, null, 2).replace(
@@ -68,7 +70,7 @@ request({
           },
           "valueUri": [{
             "$": {
-              "value": config.baseUrl + "/api/oauth/authorize"
+              "value": config.authorizeUrl
             }
           }]
         }, {
@@ -77,7 +79,7 @@ request({
           },
           "valueUri": [{
             "$": {
-              "value": config.baseUrl + "/api/oauth/token"
+              "value": config.tokenUrl
             }
           }]
         }]

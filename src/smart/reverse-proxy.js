@@ -5,9 +5,10 @@ var jwt = require("jsonwebtoken");
 var replStream = require("replacestream");
 var config = require("../config.js");
 var oauth = require("./oauth-helpers");
+var security = require("../services/security");
 
 module.exports = function (req, res) {
-  if (!req.token){
+  if (!req.token && !config.disableSecurity){
     return res.status(401).end();
   }
   var h2 = Object.assign({}, req.headers, {host: undefined});
@@ -19,30 +20,11 @@ module.exports = function (req, res) {
     gzip: true
   };
 
-  options.url = config.fhirServer + req.url;
-
-  if (req.token.claims.patient) {
-    // this is naive. Problems include:
-    // 1. Can access any resource directly by ID
-    // 2. Can access resources by chaining
-    // 3. Can access resources by include
-    // ...
-    if (req.url.match(/^\/(Condition|MedicationOrder|Observation|Immunization|Procedure|MedicationStatement)\/?(\?.*)?$/)) {
-      options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + req.token.claims.patient;
-    }
-     if (req.url.match(/^\/Patient\/?(\?.*)?$/)) {
-      options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "_id=" + req.token.claims.patient;
-    }
-  }
-
-  var accept = req.headers['accept'];
-  if (accept && accept.indexOf('json') >= 0) {
-    res.type("application/json+fhir");
-  } else {
-    res.type("application/xml+fhir");
-  }
+  options.url = config.fhirServer + security.restrictQuery(req);
+  console.log("OPTS", options.url)
 
   //fix absolute urls in response
+  console.log("Reverse proxy to", options);
   request(options)
   .on('response', function(r){
     res.status(r.statusCode);

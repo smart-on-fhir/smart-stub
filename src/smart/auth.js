@@ -48,14 +48,26 @@ router.post("/code", jsonParser, lookups, oauth.ensureScope("smart/portal"), fun
     grant_type: "authorization_code",
     client_id: req.body.client_id,
     scope: req.body.scope,
-    context: req.body.context || {},
+    context: Object.assign({}, req.body.context || {}, {
+      patient: req.token.grant.user.split("/")[1]
+    }),
     request: req.body
   }
   res.json({
-    code: oauth.signedCode(claims),
-    redirect_uris: req.unauthenticatedClient.client_id
+    code: oauth.signedCode(claims)
   });
 });
+
+router.get("/client", lookups, oauth.ensureScope("smart/portal"), function(req, res, next){
+  res.json({
+    client_id: req.unauthenticatedClient.client_id,
+    client_name: req.unauthenticatedClient.client_name,
+    client_uri: req.unauthenticatedClient.client_uri,
+    redirect_uris: req.unauthenticatedClient.redirect_uris,
+    logo_uri: req.unauthenticatedClient.logo_uri
+  });
+});
+
 
 /* Auto-authorize with no UI, for non-verifying mode only
  *
@@ -116,9 +128,15 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), lookups, funct
   var grant = req.grant;
   var scope = grant.scope || "";
 
+  if (req.unauthenticatedClient.client_secret && req.authentication.none){
+    throw "Can't get token without an authentication";
+  }
+  console.log(req.authentication);
+
   if (req.unauthenticatedClient && req.authentication.client){
     assert(req.unauthenticatedClient === req.authentication.client);
   }
+  console.log("AUTHN", req.authentication);
 
   if (grant.client_id  !== req.unauthenticatedClient.client_id) {
     throw "Client ID mismatch: " + grant.client_id + " vs. " + req.unauthenticatedClient.client_id;

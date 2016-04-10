@@ -36,9 +36,12 @@ function FileMethod(file){
       return coll;
     }, {});
 
+    console.log("in file method", values)
+
 
     function lookup(req){
       var basic = basicAuth(req) || {};
+      console.log("From lookup", req.body)
       var id = basic.name || req.query.client_id || req.body.client_id;
       if(values[id]){
         return Promise.resolve(values[id]);
@@ -51,7 +54,9 @@ function FileMethod(file){
       check: function(req){
         return lookup(req)
         .then(function(client){
+          console.log("check client secret");
           var basic = basicAuth(req);
+          console.log("check client secret", client.client_secret, basic.pass);
           if (client.client_secret && client.client_secret !== basic.pass){
             return Promise.reject("Bad secret for "+ client.client_id);
           }

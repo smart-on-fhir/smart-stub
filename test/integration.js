@@ -363,7 +363,7 @@ describe('reverse proxy', function() {
   });
 
   it('uses a token when present', function(){
-    return fetch('http://localhost:3000/api/fhir/Patient?', {
+    return fetch('http://localhost:3000/api/fhir/Condition?', {
       method: 'get',
       headers: {
         'Content-Type': 'application/json',

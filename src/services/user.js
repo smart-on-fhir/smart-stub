@@ -29,6 +29,7 @@ function FileMethod(file){
       coll[c.username] = c;
       return coll;
     }, {});
+    console.log("in file method", values)
 
   return {
     check: function(username, password){

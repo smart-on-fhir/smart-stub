@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/pure-min.css">
+  </head>
+  <body>
+    <div id="content" style="margin:40px;">
+      <h2>Share your data with an app?</h2>
+      <form class="pure-form pure-form-aligned">
+        <h3 id="error"></h3>
+
+        <div class="pure-control-group">
+          <label for="app-launch-url">For app:</label>
+          <span id="app-name"></span> (<code id="app-id"></code>)
+        </div>
+
+        <div class="pure-control-group">
+          <label for="app-launch-url">Grant access to:</label>
+          <code id="scopes"></code>
+        </div>
+
+        <div class="pure-controls">
+          <button id="approve" class="pure-button pure-button-primary">Approve</button>
+          <button id="reject" class="pure-button pure-button-success">Reject</button>
+        </div>
+
+      </form>
+    </div>
+  </body>
+  <script>
+
+    var appState = {
+      loggedIn: false,
+      client: { },
+      query: parseQuery(window.location.search || "?")
+    }
+
+    function render(state){
+      document.getElementById("app-name").innerText = state.client.client_name;
+      document.getElementById("app-id").innerText = state.client.client_id;
+      document.getElementById("scopes").innerText = state.query.scope;
+      document.getElementById("error").innerText = state.error || "";
+      document.getElementById("approve").disabled = !!state.error;
+    }
+
+    document.getElementById("approve").addEventListener("click", function(e){
+      e.preventDefault();
+      fetch("/api/oauth/code", {
+        method: "post",
+        body: JSON.stringify({
+          client_id: appState.client.client_id,
+          scope: appState.query.scope,
+          context: {
+            patient: 'cannot-jhav-it'
+          }
+
+        }),
+        headers: {
+          "Authorization": "Bearer " + appState.token.access_token,
+          "Content-Type": "application/json"
+        }
+      }).then(function(r){
+        return r.json()
+      }).then(function(r){
+        console.log("Got code", r)
+        window.location.href = appState.query.redirect_uri + "?" + querystring({
+          code: r.code,
+          state: appState.query.state
+        });
+      })
+    });
+
+    var formData = {
+      username: "demo",
+      password: "demo",
+      grant_type: "password",
+      scope: "smart/portal",
+      client_id: "portal-demo"
+    }
+
+    fetch("/api/oauth/token", {
+      method: "post",
+      body: querystring(formData),
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8"
+      }
+    }).then(function(r){
+      return r.json()
+    }).then(function(r){
+      appState.token = r;
+      console.log("Got portal access token", r);
+      return fetch("/api/oauth/client?client_id="+appState.query.client_id, {
+        headers: { "Authorization": "Bearer " + appState.token.access_token }
+      })
+    }).then(function(r){
+      return r.json();
+    }).then(function(r){
+      console.log("Got client details", r);
+      appState.client = r;
+      if (appState.client.redirect_uris.indexOf(appState.query.redirect_uri) === -1){
+        appState.error = "Redirect URI mismatch (see console)";
+        console.log("Mismatch", appState.client.redirect_uris, appState.query.redirect_uri)
+      }
+
+      render(appState);
+    });
+
+    function querystring(d){
+      return Object.keys(d).reduce(function(ret, k){
+        if (d[k]) {
+          return ret + encodeURIComponent(k) + "=" + encodeURIComponent(d[k]) + "&";
+        } else {
+          return ret;
+        }
+      }, "");
+    }
+
+    function parseQuery(q) {
+      return q.substr(1).split("&").reduce(function(coll, pair){
+        var kv = pair.split("=");
+        coll[decodeURIComponent(kv[0])] = (decodeURIComponent(kv[1]) || "").replace(/\+/g, " ");
+        return coll;
+      }, {})
+    }
+  </script>
+</html>

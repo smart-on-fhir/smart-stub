@@ -30,7 +30,8 @@ module.exports = {
   },
 
   populateAuthentications: function(req, res, next){
-    if(req.header.authorization && req.headers.authorization.match(/^Basic/)){
+    if(req.headers.authorization && req.headers.authorization.match(/^Basic/)){
+    console.log("For basic");
       return config.clientService
       .check(req)
       .then(function(client){
@@ -89,7 +90,6 @@ module.exports = {
         return next()
       }
 
-      console.log("Eval scopes", req.token)
       if (req.token.claims.scope.split(/\s+/).filter(function(s){ return s === target; }).length !== 1){
         return next(token.scope + " doesn't have one element = " + target);
       }
