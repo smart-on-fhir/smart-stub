@@ -70,13 +70,15 @@ var ccdsScopes = [
 var allowedResources = [
   "AllergyIntolerance",
   "Condition",
-  "MedicationOrder",
-  "MedicationDispense",
-  "MedicationStatement",
-  "Observation",
+  "DocumentReference",
   "Encounter",
   "Immunization",
-  "Procedure",
+  "MedicationAdministration",
+  "MedicationDispense",
+  "MedicationOrder",
+  "MedicationStatement",
+  "Observation",
   "Patient",
-  "Practitioner"
+  "Practitioner",
+  "Procedure"
 ]
