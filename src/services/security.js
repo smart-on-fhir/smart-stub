@@ -1,3 +1,4 @@
+var _ = require("underscore");
 var querystring = require("querystring");
 var url = require("url");
 
@@ -17,6 +18,11 @@ module.exports = {
       throw "Not allowed to query for " + segments[0] + " resource type";
     }
 
+    var disallowed = _.difference(_.keys(u.query), allowedQueryParams);
+    if (disallowed.length) {
+      throw "Not allowed to query for [" + disallowed + "] parameters";
+    }
+
     // a search operation
     if (segments.length === 1){
       if (req.token && req.token.claims){
@@ -25,6 +31,7 @@ module.exports = {
         }
       }
     }
+
     return u.pathname + url.format({query:u.query});
   }
 }
@@ -82,3 +89,11 @@ var allowedResources = [
   "Practitioner",
   "Procedure"
 ]
+
+var allowedQueryParams = [
+  "_count",
+  "_format",
+  "_lastUpdated",
+  "category",
+  "patient"
+];
