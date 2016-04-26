@@ -87,7 +87,7 @@ router.get("/authorize", lookups, function (req, res, next) {
   assert(config.disableSecurity)
   oauth.ensureValidAudience(req.query.aud)
 
-  var launchJwt = jwt.decode(req.query.launch && req.query.launch.replace(/=/g, "") || oauth.createEmptyJwt());
+  var launchJwt = jwt.decode(req.query.launch && req.query.launch.replace(/=/g, "") || config.tokenService.generateEmpty());
 
   var claims = {
     grant_type: "authorization_code",
@@ -97,7 +97,7 @@ router.get("/authorize", lookups, function (req, res, next) {
   }
 
   var state = req.query.state;
-  var signedCode = jwt.sign(claims, config.jwtSecret, { expiresIn: "5m" });
+  var signedCode = config.tokenService.sign(claims);
   var redirect = req.query.redirect_uri;
 
   var query = {
@@ -142,24 +142,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), lookups, funct
     throw "Client ID mismatch: " + grant.client_id + " vs. " + req.unauthenticatedClient.client_id;
   }
 
-  if(scope.indexOf('offline_access')  !== -1){
-    refresh = jwt.sign(Object.assign({}, grant, {grant_type: "refresh_token"}), config.jwtSecret);
-  }
-
-  var token = Object.assign({}, grant.context || {},  {
-    scope: scope,
-    token_type: "Bearer",
-    expires_in: 3600,
-    refresh_token: refresh,
-    client_id: req.unauthenticatedClient.client_id
-  });
-
-  token.access_token = jwt.sign({
-    grant: grant,
-    claims: token
-  }, config.jwtSecret, {
-    expiresIn: "1h"
-  });
+  token = config.tokenService.generate(grant.client_id, scope, grant);
 
   res.json(token);
 });

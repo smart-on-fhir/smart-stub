@@ -1,4 +1,5 @@
 var clientService = require("./services/client");
+var tokenService = require('./services/token');
 var userService = require("./services/user");
 
 var disableSecurity = ((process.env.DISABLE_SECURITY || '').toLowerCase() === 'true');
@@ -15,6 +16,9 @@ module.exports = {
   clientService: clientService(
     process.env.CLIENT_LOOKUP_METHOD ||
     (disableSecurity ? "none" : "file")),
+  tokenService: tokenService(
+    process.env.TOKEN_MANAGEMENT_METHOD ||
+    ("none")),
   userService: userService(
     process.env.USER_AUTHENTICATION_METHOD ||
     (disableSecurity ? "none" : "file"))

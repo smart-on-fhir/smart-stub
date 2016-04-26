@@ -1,5 +1,4 @@
 var config = require('../config');
-var jwt = require('jsonwebtoken');
 
 module.exports = {
   populateGrants: function (req, res, next){
@@ -17,13 +16,27 @@ module.exports = {
         return next();
       }).catch(next);
     } else if (grantType === 'authorization_code') {
-      req.grant = ensureValidJwt(req.body.code);
-      req.grant.grant_type = grantType;
-      return next();
+      console.log('auth code 1');
+      return config.tokenService
+        .verify(req.body.code)
+        .then(function (token) {
+          console.log('auth code 2');
+          req.grant = token;
+          req.grant.grant_type = grantType;
+          return next();
+        })
+        .catch(next);
     } else if (grantType === 'refresh_token') {
-      req.grant = ensureValidJwt(req.body.refresh_token);
-      req.grant.grant_type = grantType;
-      return next();
+      console.log('refresh token 1');
+      return config.tokenService
+        .verify(req.body.refresh_token)
+        .then(function (token) {
+          console.log('refresh token 2');
+          req.grant = token;
+          req.grant.grant_type = grantType;
+          return next();
+        })
+        .catch(next);
     } else {
       return next();
     }
@@ -48,13 +61,7 @@ module.exports = {
   },
 
   signedCode: function(params){
-    if(!params.client_id){
-      throw "Need a client id in " + params;
-    }
-    if(!params.scope){
-      throw "Need a scope in " + params;
-    }
-    return jwt.sign(params, config.jwtSecret, { expiresIn: "5m" });
+    return config.tokenService.sign(params);
   },
 
   populateUnauthenticatedClient: function(req, res, next){
@@ -67,8 +74,6 @@ module.exports = {
     }).catch(next)
   },
 
-  ensureValidJwt: ensureValidJwt,
-
   ensureValidAudience: function(aud){
     if (normalizeURL(aud) != normalizeURL(config.baseUrl + '/api/fhir')) {
       throw "Bad audience: " + aud + " vs. " + normalizeURL(config.baseUrl + '/api/fhir');
@@ -80,8 +85,15 @@ module.exports = {
     if (!req.headers.authorization || !req.headers.authorization.match(/^Bearer /)) {
       return next();
     }
-    req.token = ensureValidJwt(req.headers.authorization.split("Bearer ")[1]);
-    next()
+    var token = req.headers.authorization.split("Bearer ")[1];
+    console.log('populateToken');
+    config.tokenService
+      .verify(token)
+      .then(function (token) {
+        req.token = token;
+        next();
+      })
+      .catch(next);
   },
 
   ensureScope: function(target){
@@ -90,6 +102,7 @@ module.exports = {
         return next()
       }
 
+      console.log(req.token);
       if (req.token.claims.scope.split(/\s+/).filter(function(s){ return s === target; }).length !== 1){
         return next(token.scope + " doesn't have one element = " + target);
       }
@@ -98,7 +111,7 @@ module.exports = {
   },
 
   createEmptyJwt: function(){
-    return jwt.sign({}, null, {algorithm: "none"} )
+    return config.tokenService.generateEmpty();
   }
 }
 
@@ -108,11 +121,3 @@ function normalizeURL(url) {
   }
   return url.toLowerCase();
 }
-
-
-function ensureValidJwt(token){
-  var result = jwt.verify(token, config.jwtSecret);
-  return result;
-}
-
-
