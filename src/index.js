@@ -13,7 +13,7 @@ var config = require("./config");
 var app = express();
 
 app.use(cors());
-app.use(logger('dev'));
+app.use(logger('combined'));
 
 app.use("/api/oauth", smartAuth);
 app.use("/api/fhir", smartMetadata);
