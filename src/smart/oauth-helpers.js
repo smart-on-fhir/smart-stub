@@ -108,10 +108,6 @@ module.exports = {
       }
       return next();
     }
-  },
-
-  createEmptyJwt: function(){
-    return config.tokenService.generateEmpty();
   }
 }
 
