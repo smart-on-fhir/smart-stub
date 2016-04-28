@@ -1,37 +1,37 @@
-var config = require('../config');
+var config = require("../config");
 
 module.exports = {
   populateGrants: function (req, res, next){
     var grantType = req.body && req.body.grant_type;
-    if (grantType === 'password') {
+    if (grantType === "password") {
       config.userService
       .check(req.body.username, req.body.password)
       .then(function(user){
         req.grant = {
           client_id: req.body.client_id,
-          grant_type: 'password',
+          grant_type: "password",
           user: user.fhirId,
           scope: req.body.scope || ""
-        }
+        };
         return next();
       }).catch(next);
-    } else if (grantType === 'authorization_code') {
-      console.log('auth code 1');
-      return config.tokenService
+    } else if (grantType === "authorization_code") {
+      console.log("auth code 1", req.body.code);
+      return config.codeService
         .verify(req.body.code)
         .then(function (token) {
-          console.log('auth code 2');
+          console.log("auth code 2", token);
           req.grant = token;
           req.grant.grant_type = grantType;
           return next();
         })
         .catch(next);
-    } else if (grantType === 'refresh_token') {
-      console.log('refresh token 1');
+    } else if (grantType === "refresh_token") {
+      console.log("refresh token 1");
       return config.tokenService
         .verify(req.body.refresh_token)
         .then(function (token) {
-          console.log('refresh token 2');
+          console.log("refresh token 2");
           req.grant = token;
           req.grant.grant_type = grantType;
           return next();
@@ -43,16 +43,15 @@ module.exports = {
   },
 
   populateAuthentications: function(req, res, next){
-    if(req.headers.authorization && req.headers.authorization.match(/^Basic/)){
-    console.log("For basic");
-      return config.clientService
-      .check(req)
+    if (req.headers.authorization && req.headers.authorization.match(/^Basic/)) {
+      console.log("For basic");
+      return config.clientService.check(req)
       .then(function(client){
         req.authentication = {
           client: client
         };
         return next();
-      }).catch(next)
+      }).catch(next);
     }
     req.authentication = {
       none: true
@@ -61,7 +60,7 @@ module.exports = {
   },
 
   signedCode: function(params){
-    return config.tokenService.sign(params);
+    return config.codeService.sign(params);
   },
 
   populateUnauthenticatedClient: function(req, res, next){
@@ -71,12 +70,12 @@ module.exports = {
     .then(function(client){
       req.unauthenticatedClient = client;
       next();
-    }).catch(next)
+    }).catch(next);
   },
 
   ensureValidAudience: function(aud){
-    if (normalizeURL(aud) != normalizeURL(config.baseUrl + '/api/fhir')) {
-      throw "Bad audience: " + aud + " vs. " + normalizeURL(config.baseUrl + '/api/fhir');
+    if (normalizeURL(aud) != normalizeURL(config.baseUrl + "/api/fhir")) {
+      throw "Bad audience: " + aud + " vs. " + normalizeURL(config.baseUrl + "/api/fhir");
     }
     return;
   },
@@ -86,7 +85,6 @@ module.exports = {
       return next();
     }
     var token = req.headers.authorization.split("Bearer ")[1];
-    console.log('populateToken');
     config.tokenService
       .verify(token)
       .then(function (token) {
@@ -99,17 +97,20 @@ module.exports = {
   ensureScope: function(target){
     return function(req, res, next){
       if (config.disableSecurity){
-        return next()
+        return next();
       }
 
-      console.log(req.token);
-      if (req.token.claims.scope.split(/\s+/).filter(function(s){ return s === target; }).length !== 1){
-        return next(token.scope + " doesn't have one element = " + target);
+      var filtered = req.token.claims.scope.split(/\s+/).filter(function(s){
+        return s === target;
+      });
+
+      if (filtered.length !== 1) {
+        return next(req.token.claims.scope + " doesn't have one element = " + target);
       }
       return next();
-    }
+    };
   }
-}
+};
 
 function normalizeURL(url) {
   if (url.match(/\/$/)) {
