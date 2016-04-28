@@ -126,12 +126,47 @@ function SqliteMethod() {
       });
     },
 
-    revoke: function (token) {
+    revoke: function (token, tokenType) {
       var config = require("../config");
       var db = config.databaseService;
 
+      // The OAUTH spec is a bit weird for revokes.
+      // > If the server is unable to locate the token using
+      // > the given hint, it MUST extend its search across all of its
+      // > supported token types.
+      // So we check for the token in both tables, and order the returned
+      // results by which one the client provided.
+      var query = [
+        "SELECT 'access_token' as token_type, 'access_token' = $token_type as is_token_type",
+        "FROM access_token WHERE access_token = $token",
+        "UNION",
+        "SELECT 'refresh_token' as token_type, 'refresh_token' = $token_type as is_token_type",
+        "FROM refresh_token WHERE refresh_token = $token",
+        "ORDER BY is_token_type",
+        "LIMIT 1"
+      ].join("\n");
+
+      var params = {
+        "$token": token,
+        "$token_type": tokenType
+      };
+
       // Delete the token if we've got it
-      return db.run("DELETE FROM access_token WHERE access_token = ?", token);
+      return db.get(query, params)
+      .then(function (row) {
+        var query;
+
+        switch (row["token_type"]) {
+        case "access_token":
+          query = "DELETE FROM access_token WHERE access_token = ?";
+          break;
+        case "refresh_token":
+          query = "DELETE FROM refresh_token WHERE refresh_token = ?";
+          break;
+        }
+
+        return db.run(query, token);
+      });
     },
 
     verify: function (token) {
