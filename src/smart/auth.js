@@ -122,7 +122,6 @@ router.get("/authorize", lookups, function (req, res, next) {
  */
 router.post("/token", bodyParser.urlencoded({ extended: false }), lookups, function (req, res, next) {
   var grant = req.grant;
-  var scope = grant.scope || "";
 
   if (req.unauthenticatedClient.client_secret && req.authentication.none){
     throw "Can't get token without an authentication";
@@ -134,12 +133,12 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), lookups, funct
   }
   console.log("AUTHN", req.authentication);
 
-  if (grant.client_id  !== req.unauthenticatedClient.client_id) {
-    throw "Client ID mismatch: " + grant.client_id + " vs. " + req.unauthenticatedClient.client_id;
-  }
-
-  config.tokenService.generate(grant.client_id, scope, grant)
+  config.tokenService.generate(grant)
   .then(function (token) {
+    if (grant.client_id  !== req.unauthenticatedClient.client_id) {
+      throw "Client ID mismatch: " + grant.client_id + " vs. " + req.unauthenticatedClient.client_id;
+    }
+
     res.json(token);
   });
 });

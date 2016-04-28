@@ -19,15 +19,18 @@ function NoneMethod(){
     /**
      * Generate a JWT.
      *
-     * @param {string} client_id This is the client_id we"re generating for.
-     * @param {string} scope What this token should be able to access.
-     *    Should be in the format "patient/*.read".
      * @param {object} grant Grant request.
+     * @param {string} grant.client_id This is the client_id we"re generating
+     *    for.
+     * @param {string} grant.scope What this token should be able to access.
+     *    Should be in the format "patient/*.read".
      * @returns {Promise}
      */
-    generate: function(client_id, scope, grant){
+    generate: function(grant){
       var config = require("../config");
       var refresh;
+      var scope = grant.scope;
+      var client_id = grant.client_id;
 
       if (scope.indexOf("offline_access") !== -1) {
         refresh = jwt.sign(Object.assign({}, grant, {grant_type: "refresh_token"}), config.jwtSecret);
@@ -86,11 +89,11 @@ function SqliteMethod() {
   var naive = NoneMethod();
 
   return {
-    generate: function (client_id, scope, grant) {
+    generate: function (grant) {
       var generatedToken;
 
       // First generate a JWT using the naive implementation
-      return naive.generate(client_id, scope, grant)
+      return naive.generate(grant)
       // Verifying it is an easy way to generate initialized and expiration times
       .then(function (token) {
         generatedToken = token;
@@ -102,14 +105,19 @@ function SqliteMethod() {
         var config = require("../config");
         var db = config.databaseService;
 
-        return db.run(
-          "INSERT INTO token VALUES (?, ?, ?, ?, ?)",
-          generatedToken.client_id,
-          generatedToken.access_token,
-          generatedToken.refresh_token,
-          verified.iat,
-          verified.exp
-        );
+        return Promise.all([
+          db.run(
+            "INSERT INTO refresh_token VALUES (?, ?)",
+            generatedToken.client_id,
+            generatedToken.refresh_token
+          ),
+          db.run(
+            "INSERT INTO access_token VALUES (?, ?, ?)",
+            generatedToken.access_token,
+            verified.iat,
+            verified.exp
+          )
+        ]);
       })
       // Calling code expects a promise with a generated token, not the output
       // of a SQL insert.
@@ -123,7 +131,7 @@ function SqliteMethod() {
       var db = config.databaseService;
 
       // Delete the token if we've got it
-      return db.run("DELETE FROM token WHERE access_token = ?", token);
+      return db.run("DELETE FROM access_token WHERE access_token = ?", token);
     },
 
     verify: function (token) {
@@ -135,15 +143,14 @@ function SqliteMethod() {
       .then(function (verified) {
         var config = require("../config");
         var db = config.databaseService;
-        var now = Math.floor(Date.now() / 1000);
+        var query = [
+          "SELECT 1 FROM access_token WHERE access_token = $token",
+          "SELECT 1 FROM refresh_token WHERE refresh_token = $token"
+        ].join(" UNION ");
 
-        verifiedToken = token;
+        verifiedToken = verified;
 
-        return db.get(
-          "SELECT * FROM token WHERE access_token = ? AND exp > ?",
-          token,
-          now
-        );
+        return db.get(query, {"$token": token});
       })
       // The calling code expects a "verified" output, not the result of a SQL query
       .then(function () {

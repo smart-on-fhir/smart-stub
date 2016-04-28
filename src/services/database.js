@@ -12,14 +12,20 @@ function SqliteMethod(path) {
   var db = new sqlite3.Database(path);
   db.serialize();
 
-  var columns = [
+  var refreshTokenColumns = [
     "client_id TEXT",
+    "refresh_token TEXT"
+  ];
+  var accessTokenColumns = [
     "access_token TEXT",
-    "refresh_token TEXT",
     "iat INTEGER",
     "exp INTEGER"
   ];
-  db.run("CREATE TABLE IF NOT EXISTS token (" + columns.join(", ") + ")");
+
+  db.run("CREATE TABLE IF NOT EXISTS refresh_token (" +
+         refreshTokenColumns.join(", ") + ")");
+  db.run("CREATE TABLE IF NOT EXISTS access_token (" +
+         accessTokenColumns.join(", ") + ")");
 
   return {
     run: function () {
@@ -39,7 +45,6 @@ function SqliteMethod(path) {
 
       return new Promise(function (resolve, reject) {
         args.push(function (err, row) {
-          console.log("DB.GET", err, row, this, args);
           (row) ? resolve(row) :
             (err) ? reject(err) : reject(row);
         });
