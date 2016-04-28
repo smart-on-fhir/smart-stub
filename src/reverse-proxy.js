@@ -20,6 +20,13 @@ module.exports = function (req, res) {
   var h2 = Object.assign({}, req.headers);
   delete h2["host"];
   h2["content-type"] = "application/json";
+
+  if (req.url.match(/_format=.*json/i)) {
+    h2['accept'] = "application/json+fhir";;
+  } else if (req.url.match(/_format=.*xml/i)) {
+    h2['accept'] = "application/xml+fhir";
+  }
+
   var body = req.method === "POST" || req.method === "PUT" ? req.body : undefined;
   var options = {
     method: req.method,
@@ -37,7 +44,7 @@ module.exports = function (req, res) {
 
   console.log("PROXY: " + options.url);
 
-  var accept = req.headers['accept'];
+  var accept = options.headers['accept'];
   if (accept && accept.indexOf('json') >= 0) {
     res.type("application/json+fhir");
   } else {
