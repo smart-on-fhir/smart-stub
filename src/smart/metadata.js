@@ -26,7 +26,7 @@ request({
   url: metadataUrl,
   json: true
 }, function (error, response, body) {
-console.log("GEtting metadat", response.statusCode);
+  console.log("Getting metadata", response.statusCode);
   if (!error && response.statusCode === 200) {
     var conformance = body;
     if (!conformance.rest[0].security){

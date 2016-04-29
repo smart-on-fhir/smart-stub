@@ -1,7 +1,6 @@
 "use strict";
 
 var request = require("request");
-var jwt = require("jsonwebtoken");
 var replStream = require("replacestream");
 var config = require("../config.js");
 var oauth = require("./oauth-helpers");

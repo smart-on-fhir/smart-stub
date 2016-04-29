@@ -41,7 +41,6 @@ function FileMethod(file){
 
     function lookup(req){
       var basic = basicAuth(req) || {};
-      console.log("From lookup", req.body)
       var id = basic.name || req.query.client_id || req.body.client_id;
       if(values[id]){
         return Promise.resolve(values[id]);

@@ -1,45 +1,57 @@
-var config = require('../config');
-var jwt = require('jsonwebtoken');
+var config = require("../config");
 
 module.exports = {
   populateGrants: function (req, res, next){
     var grantType = req.body && req.body.grant_type;
-    if (grantType === 'password') {
+    if (grantType === "password") {
       config.userService
       .check(req.body.username, req.body.password)
       .then(function(user){
         req.grant = {
           client_id: req.body.client_id,
-          grant_type: 'password',
+          grant_type: "password",
           user: user.fhirId,
           scope: req.body.scope || ""
-        }
+        };
         return next();
       }).catch(next);
-    } else if (grantType === 'authorization_code') {
-      req.grant = ensureValidJwt(req.body.code);
-      req.grant.grant_type = grantType;
-      return next();
-    } else if (grantType === 'refresh_token') {
-      req.grant = ensureValidJwt(req.body.refresh_token);
-      req.grant.grant_type = grantType;
-      return next();
+    } else if (grantType === "authorization_code") {
+      console.log("auth code 1", req.body.code);
+      return config.codeService
+        .verify(req.body.code)
+        .then(function (token) {
+          console.log("auth code 2", token);
+          req.grant = token;
+          req.grant.grant_type = grantType;
+          return next();
+        })
+        .catch(next);
+    } else if (grantType === "refresh_token") {
+      console.log("refresh token 1");
+      return config.tokenService
+        .verify(req.body.refresh_token)
+        .then(function (token) {
+          console.log("refresh token 2");
+          req.grant = token;
+          req.grant.grant_type = grantType;
+          return next();
+        })
+        .catch(next);
     } else {
       return next();
     }
   },
 
   populateAuthentications: function(req, res, next){
-    if(req.headers.authorization && req.headers.authorization.match(/^Basic/)){
-    console.log("For basic");
-      return config.clientService
-      .check(req)
+    if (req.headers.authorization && req.headers.authorization.match(/^Basic/)) {
+      console.log("For basic");
+      return config.clientService.check(req)
       .then(function(client){
         req.authentication = {
           client: client
         };
         return next();
-      }).catch(next)
+      }).catch(next);
     }
     req.authentication = {
       none: true
@@ -48,13 +60,7 @@ module.exports = {
   },
 
   signedCode: function(params){
-    if(!params.client_id){
-      throw "Need a client id in " + params;
-    }
-    if(!params.scope){
-      throw "Need a scope in " + params;
-    }
-    return jwt.sign(params, config.jwtSecret, { expiresIn: "5m" });
+    return config.codeService.sign(params);
   },
 
   populateUnauthenticatedClient: function(req, res, next){
@@ -64,14 +70,12 @@ module.exports = {
     .then(function(client){
       req.unauthenticatedClient = client;
       next();
-    }).catch(next)
+    }).catch(next);
   },
 
-  ensureValidJwt: ensureValidJwt,
-
   ensureValidAudience: function(aud){
-    if (normalizeURL(aud) != normalizeURL(config.baseUrl + '/api/fhir')) {
-      throw "Bad audience: " + aud + " vs. " + normalizeURL(config.baseUrl + '/api/fhir');
+    if (normalizeURL(aud) != normalizeURL(config.baseUrl + "/api/fhir")) {
+      throw "Bad audience: " + aud + " vs. " + normalizeURL(config.baseUrl + "/api/fhir");
     }
     return;
   },
@@ -80,27 +84,35 @@ module.exports = {
     if (!req.headers.authorization || !req.headers.authorization.match(/^Bearer /)) {
       return next();
     }
-    req.token = ensureValidJwt(req.headers.authorization.split("Bearer ")[1]);
-    next()
+    var token = req.headers.authorization.split("Bearer ")[1];
+    config.tokenService
+      .verify(token)
+      .then(function (token) {
+        req.token = token;
+        next();
+      })
+      .catch(next);
   },
 
   ensureScope: function(target){
     return function(req, res, next){
       if (config.disableSecurity){
-        return next()
+        return next();
       }
 
-      if (req.token.claims.scope.split(/\s+/).filter(function(s){ return s === target; }).length !== 1){
-        return next(token.scope + " doesn't have one element = " + target);
+      var scope = req.token && req.token.claims ? req.token.claims.scope : "";
+      var filtered = scope.split(/\s+/).filter(function(s){
+        return s === target;
+      });
+
+      if (filtered.length !== 1) {
+        throw scope + " doesn't have one element = " + target;
+        return next(scope + " doesn't have one element = " + target);
       }
       return next();
-    }
-  },
-
-  createEmptyJwt: function(){
-    return jwt.sign({}, null, {algorithm: "none"} )
+    };
   }
-}
+};
 
 function normalizeURL(url) {
   if (url.match(/\/$/)) {
@@ -108,11 +120,3 @@ function normalizeURL(url) {
   }
   return url.toLowerCase();
 }
-
-
-function ensureValidJwt(token){
-  var result = jwt.verify(token, config.jwtSecret);
-  return result;
-}
-
-
