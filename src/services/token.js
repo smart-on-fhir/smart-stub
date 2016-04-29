@@ -107,12 +107,12 @@ function SqliteMethod() {
 
         return Promise.all([
           db.run(
-            "INSERT INTO refresh_token VALUES (?, ?)",
+            "INSERT INTO refresh_token (client_id, refresh_token) VALUES (?, ?)",
             generatedToken.client_id,
             generatedToken.refresh_token
           ),
           db.run(
-            "INSERT INTO access_token VALUES (?, ?, ?)",
+            "INSERT INTO access_token (access_token, iat, exp) VALUES (?, ?, ?)",
             generatedToken.access_token,
             verified.iat,
             verified.exp
@@ -155,17 +155,27 @@ function SqliteMethod() {
       return db.get(query, params)
       .then(function (row) {
         var query;
+        var params = {
+          "$token": token,
+          "$revoked_at": Math.floor(Date.now() / 1000)
+        };
 
         switch (row["token_type"]) {
         case "access_token":
-          query = "DELETE FROM access_token WHERE access_token = ?";
+          query = [
+            "UPDATE access_token SET revoked_at = $revoked_at",
+            "WHERE access_token = $token"
+          ].join("\n");
           break;
         case "refresh_token":
-          query = "DELETE FROM refresh_token WHERE refresh_token = ?";
+          query = [
+            "UPDATE refresh_token SET revoked_at = $revoked_at",
+            "WHERE refresh_token = $token"
+          ].join("\n");
           break;
         }
 
-        return db.run(query, token);
+        return db.run(query, params);
       });
     },
 
@@ -180,8 +190,11 @@ function SqliteMethod() {
         var db = config.databaseService;
         var query = [
           "SELECT 1 FROM access_token WHERE access_token = $token",
-          "SELECT 1 FROM refresh_token WHERE refresh_token = $token"
-        ].join(" UNION ");
+          "AND revoked_at IS NULL",
+          "UNION",
+          "SELECT 1 FROM refresh_token WHERE refresh_token = $token",
+          "AND revoked_at IS NULL"
+        ].join("\n");
 
         verifiedToken = verified;
 

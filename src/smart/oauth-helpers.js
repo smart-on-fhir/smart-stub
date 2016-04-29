@@ -100,12 +100,14 @@ module.exports = {
         return next();
       }
 
-      var filtered = req.token.claims.scope.split(/\s+/).filter(function(s){
+      var scope = req.token && req.token.claims ? req.token.claims.scope : "";
+      var filtered = scope.split(/\s+/).filter(function(s){
         return s === target;
       });
 
       if (filtered.length !== 1) {
-        return next(req.token.claims.scope + " doesn't have one element = " + target);
+        throw scope + " doesn't have one element = " + target;
+        return next(scope + " doesn't have one element = " + target);
       }
       return next();
     };

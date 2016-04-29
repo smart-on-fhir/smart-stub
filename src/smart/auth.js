@@ -25,7 +25,7 @@ var jsonParser = bodyParser.json();
 /*
   * Create an authorization code. This is for a trusted static front-end to call,
   * as indicated by the "smart/portal" scope. In general, only "we" call this;
-  * other apps don"t.
+  * other apps don't.
   *
   * The POSTed body is a JSON object like:
   * {
@@ -126,12 +126,10 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), lookups, funct
   if (req.unauthenticatedClient.client_secret && req.authentication.none){
     throw "Can't get token without an authentication";
   }
-  console.log(req.authentication);
 
   if (req.unauthenticatedClient && req.authentication.client){
     assert(req.unauthenticatedClient === req.authentication.client);
   }
-  console.log("AUTHN", req.authentication);
 
   config.tokenService.generate(grant)
   .then(function (token) {
@@ -140,7 +138,8 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), lookups, funct
     }
 
     res.json(token);
-  });
+  })
+  .catch(next);
 });
 
 /**
@@ -168,5 +167,6 @@ router.post("/revoke", bodyParser.urlencoded({ extended: false }), lookups, func
   config.tokenService.revoke(token, token_type)
   .then(function () {
     res.json({});
-  });
+  })
+  .catch(next);
 });

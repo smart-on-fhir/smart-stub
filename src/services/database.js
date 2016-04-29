@@ -14,12 +14,14 @@ function SqliteMethod(path) {
 
   var refreshTokenColumns = [
     "client_id TEXT",
-    "refresh_token TEXT"
+    "refresh_token TEXT",
+    "revoked_at INTEGER NULL DEFAULT NULL"
   ];
   var accessTokenColumns = [
     "access_token TEXT",
     "iat INTEGER",
-    "exp INTEGER"
+    "exp INTEGER",
+    "revoked_at INTEGER NULL DEFAULT NULL"
   ];
 
   db.run("CREATE TABLE IF NOT EXISTS refresh_token (" +
@@ -33,7 +35,7 @@ function SqliteMethod(path) {
 
       return new Promise(function (resolve, reject) {
         args.push(function (err) {
-          (err) ? reject(err) : resolve(this);
+          (err) ? reject(err) : resolve();
         });
 
         db.run.apply(db, args);
