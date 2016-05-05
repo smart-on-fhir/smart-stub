@@ -1,48 +1,122 @@
-<html>
-<head>
-	<link rel="stylesheet" href="pure-min.css">
-</head>
-<body><div id="content" style="margin:40px;">
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<title>SMART App Launcher</title>
 
-	<h2 style="text-align:center">SMART Stub Client</h2>
-	<form class="pure-form pure-form-aligned">
+		<link href="./vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="./blue-nav.css" rel="stylesheet">
 
-        <div class="pure-control-group">
-			<label for="app-launch-url">App Launch Url:</label>
-			<input id="app-launch-url" class="pure-input-2-3" value="https://fhir-dstu2.smarthealthit.org/apps/bp-centiles/launch.html" required>
+		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+		<!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+	</head>
+	<body>
+
+		<div class="navbar navbar-custom navbar-static-top"><div class="container-fluid">
+			<div class="navbar-header">
+				<div class="pull-left" style="margin: 10px;">
+					<img src="./img/smart-bug.png" />
+				</div>
+				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
+					SMART Example EHR System - App Launcher
+				</a>
+			</div>
+		</div></div>
+
+		<div class="container">
+			<div class="row">
+
+				<div class="form-group col-xs-12 col-md-10 col-md-offset-1">
+					<label for="api-gateway-url">API Gateway URL</label>
+					<input id="api-gateway-url" class="form-control" value="https://stub-dstu2.smarthealthit.org/api/fhir">
+					<p class="help-block">Full web address of this API Gateway</p>
+				</div>
+
+
+				<div class="form-group col-xs-12 col-md-10 col-md-offset-1">
+					<label for="launch-url">App Launch URL</label>
+					<input id="launch-url" class="form-control" value="https://fhir-dstu2.smarthealthit.org/apps/bp-centiles/launch.html">
+					<p class="help-block">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
+				</div>
+
+				<div class="col-xs-12 col-md-10 col-md-offset-1">
+					<div class="checkbox">
+						<label><input id="patient-required" type="checkbox" checked> Require the user to select a patient when launching the app</label>
+					</div>
+				</div>
+
+				<div id="limit-patients" class="form-group col-xs-12 col-md-10 col-md-offset-1">
+					<label for="preferred-patients">
+						Limit Patients To:&nbsp;&nbsp;
+						<a href="picker.html?show_ids=1" target="_blank" style="font-weight:normal;">browse patients</a></label>
+					<input class="form-control" id="preferred-patients" value="9995679, 1551992, 99912345">
+					<p class="help-block">Comma seperated list of patient resource ids compatible with your app (blank will display all patients, single item will skip display of patient picker)</p>
+				</div>
+
+				<div id="picker-url-group" style="display:none;" class="form-group col-xs-12 col-md-10 col-md-offset-1">
+					<label for="picker-url">Picker URL:</label>
+					<p id="picker-url" class="form-control-static"></p>
+				</div>
+
+				<div class="col-xs-4 col-xs-offset-4">
+					<button id="launch-button" type="submit" class="btn btn-success btn-block" disabled="true">Launch</button>
+				</div>
+			</div>
 		</div>
 
-        <div class="pure-control-group">
-			<label for="smart-server-url">SMART Server Url:</label>
-			<input id="smart-server-url" class="pure-input-2-3" value="https://stub-dstu2.smarthealthit.org/api/fhir" required>
-		</div>
 
-        <div class="pure-control-group">
-			<label for="sample-patient-id">Sample Patient Id:</label>
-			<input id="sample-patient-id" class="pure-input-2-3" value="1551992" required>
-		</div>
+		</div> <!-- container -->
 
-        <div class="pure-controls">
-			<button id="run" class="pure-button pure-button-primary">Launch!</button>
-		</div>
 
-	</form>
+		<script src="./vendor/jquery-1.12.3.min.js"></script>
+		<script src="./vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+		<script>
+			$("#patient-required").click( function() {
+				$("#limit-patients").toggle(this.checked);
+				buildUrl();
+			});
+			$("#launch-button").click( function() {
+				window.open( $("#picker-url").text() );
+			});
+			$("#launch-url").on("input", function() {
+				if ($(this).val() != "") {
+					$("#launch-button").attr("disabled", false);
+					$("#picker-url-group").show()
+				} else {
+					$("#launch-button").attr("disabled", true);
+					$("#picker-url-group").hide()
+				}
+			});
+			$("#launch-url, #preferred-patients, #api-gateway-url").on("input", function() {
+				buildUrl();
+			});
+			function buildUrl(){
+				var url = window.location.href.replace(/index\.html/, "") + "picker.html?" +
+					"launch_url=" + window.encodeURIComponent($("#launch-url").val())  +
+					"&api_gateway_url=" + window.encodeURIComponent($("#api-gateway-url").val())
 
-</div></body>
-<script>
-	document.getElementById("run").addEventListener("click", function(e){
-		var initiate_login_uri = document.getElementById("app-launch-url").value
-		var proxyUrl = document.getElementById("smart-server-url").value
-		var patientId = document.getElementById("sample-patient-id").value
-		var launchId = btoa(JSON.stringify({typ:"JWT", alg: "none"})) + "." + btoa(JSON.stringify({
-		   "patient": patientId,
-		   "need_patient_banner": true,
-		   "smart_style_url": "https://gallery-styles.smarthealthit.org/styles/v1.2.12"
-		}))  + ".";
-		window.open(initiate_login_uri+"?launch="+
-			encodeURIComponent(launchId)+"&iss="+
-			encodeURIComponent(proxyUrl));
-		e.preventDefault();
-	});
-</script>
+				if ( $("#patient-required").prop("checked") && $("#preferred-patients").val() != "" )
+					url += "&limit_ids=" + window.encodeURIComponent($("#preferred-patients").val());
+
+				if ( !$("#patient-required").prop("checked") )
+					url += "&skip_picker=1";
+
+				$("#picker-url").text(url);
+
+			}
+			$("#api-gateway-url").val(
+				 window.location.href.replace(/index\.html/, "") + "api/fhir"
+			)
+			$("#launch-url").trigger("input");
+		</script>
+
+	</body>
 </html>
