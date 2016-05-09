@@ -28,12 +28,15 @@ function NoneMethod(){
      */
     generate: function(grant){
       var config = require("../config");
-      var refresh;
+      var refresh, refresh_grant;
       var scope = grant.scope;
       var client_id = grant.client_id;
 
       if (scope.indexOf("offline_access") !== -1) {
-        refresh = jwt.sign(Object.assign({}, grant, {grant_type: "refresh_token"}), config.jwtSecret);
+        refresh_grant = Object.assign({}, grant, {grant_type: "refresh_token"});
+        delete refresh_grant["exp"];
+
+        refresh = jwt.sign(refresh_grant, config.jwtSecret);
       }
 
       var token = Object.assign({}, grant.context || {},  {
