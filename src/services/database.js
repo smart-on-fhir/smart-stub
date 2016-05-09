@@ -13,11 +13,13 @@ function SqliteMethod(path) {
   db.serialize();
 
   var refreshTokenColumns = [
+    "id INTEGER PRIMARY KEY AUTOINCREMENT",
     "client_id TEXT",
     "refresh_token TEXT",
     "revoked_at INTEGER NULL DEFAULT NULL"
   ];
   var accessTokenColumns = [
+    "id INTEGER PRIMARY KEY AUTOINCREMENT",
     "access_token TEXT",
     "iat INTEGER",
     "exp INTEGER",
