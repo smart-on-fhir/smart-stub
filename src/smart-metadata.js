@@ -12,18 +12,20 @@ var xmlConformance;
 
 module.exports = router;
 router.get("/metadata", function (req, res) {
+ 
   var accept = req.headers.accept;
   if (req.url.match(/_format=.*json/i)) {
     accept = "application/json+fhir";;
   } else if (req.url.match(/_format=.*xml/i)) {
     accept = "application/xml+fhir";
   }
-  if (accept.indexOf('json') >= 0) {
-    res.type("application/json+fhir");
-    res.send(jsonConformance);
-  } else {
+
+  if (accept && accept.indexOf('xml') >= 0) {
     res.type("application/xml+fhir");
     res.send(xmlConformance);
+  } else {
+    res.type("application/json+fhir");
+    res.send(jsonConformance);
   }
 });
 

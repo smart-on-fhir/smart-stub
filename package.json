@@ -5,7 +5,9 @@
   "main": "./src/index.js",
   "scripts": {
     "watch": "./node_modules/.bin/nodemon ./src/index.js",
-    "start": "node ./src/index.js"
+    "start": "node ./src/index.js",
+    "test": "(./node_modules/.bin/mocha || true)" ,
+    "test-watch": "(./node_modules/.bin/mocha -w || true)"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +23,8 @@
     "object-assign": "^4.0.1"
   },
   "devDependencies": {
-    "nodemon": "^1.7.1"
+    "mocha": "^2.5.3",
+    "nodemon": "^1.7.1",
+    "supertest": "^1.2.0"
   }
 }

@@ -9,11 +9,10 @@ module.exports = function (req, res) {
   var token = null;
 
   if (req.headers.authorization) {
-    token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret);
-
-    //TODO: follow oauth spec here
-    if (token.exp >= new Date()) {
-      return res.send("expired token", 401);
+    try {
+      token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret);
+    } catch (e) {
+      return res.status(401).send("invalid token");
     }
   }
 

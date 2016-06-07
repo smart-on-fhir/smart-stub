@@ -49,7 +49,11 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
     codeRaw = req.body.refresh_token;
   }
 
-  var code = jwt.verify(codeRaw, config.jwtSecret);
+  try {
+    var code = jwt.verify(codeRaw, config.jwtSecret);
+  } catch (e) {
+    return res.status(401).send("invalid token");
+  }
 
   if (code.scope.indexOf('offline_access') >= 0) {
     code.context['refresh_token'] = jwt.sign(code, config.jwtSecret);
