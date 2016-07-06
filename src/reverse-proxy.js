@@ -36,7 +36,7 @@ module.exports = function (req, res) {
 
   options.url = config.fhirServer + req.url;
 
-  if (req.headers.authorization) {
+  if (req.headers.authorization && token.scope.indexOf("user/") < 0) {
     //this is probably too naive
     options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + token.patient;
   }
