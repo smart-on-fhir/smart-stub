@@ -108,9 +108,9 @@ var SmartPicker = (function() {
 
 		return state.openServerUrl + 
 			"/Patient/?_format=application/json+fhir" +
-			"&_summary=true&elements=name,gender,birthDate" +
-			"&_count=" + state.pageSize +
-			"&_skip=" + state.skip + 
+			//"&_summary=true&elements=name,gender,birthDate" +
+			//"&_count=" + state.pageSize +
+			//"&_skip=" + state.skip + 
 			//"&gender:missing=false&birthdate:missing=false&name:missing=false" +
 			(state.limitIds ? "&_id=" + state.limitIds.replace(/\s*/g, "") : "") + 
 			(sortParam ? "&_sort:" + sortDir + "=" + sortParam : "") +

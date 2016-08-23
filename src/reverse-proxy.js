@@ -38,8 +38,12 @@ module.exports = function (req, res) {
 
   if (req.headers.authorization && token.scope.indexOf("user/") < 0) {
     //this is probably too naive
-    options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + token.patient;
+    if (options.url.search("Patient") < 0) {
+       options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + token.patient;
+    }
   }
+
+  delete options.headers.authorization;
 
   console.log("PROXY: " + options.url);
 
