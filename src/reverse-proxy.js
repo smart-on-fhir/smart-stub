@@ -47,14 +47,12 @@ module.exports = function (req, res) {
 
   console.log("PROXY: " + options.url);
 
-  var accept = options.headers['accept'];
-  if (accept && accept.indexOf('json') >= 0) {
-    res.type("application/json+fhir");
-  } else {
-    res.type("application/xml+fhir");
-  }
-
   request(options)
+  .on('response', function(response) {
+     var contentType = response.headers['content-type'];
+     res.status(response.statusCode);
+     contentType && res.type(contentType);
+  })
   //fix absolute urls in response
   .pipe(replStream(config.fhirServer, config.baseUrl + '/api/fhir')).pipe(res);
 };
