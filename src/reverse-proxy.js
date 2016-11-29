@@ -38,7 +38,7 @@ module.exports = function (req, res) {
 
   if (req.headers.authorization && token.scope.indexOf("user/") < 0) {
     //this is probably too naive
-    if (options.url.search("Patient") < 0) {
+    if (options.url.toLowerCase().search("patient") < 0) {
        options.url += (req.url.indexOf("?") > -1 ? "&" : "?") + "patient=" + token.patient;
     }
   }
