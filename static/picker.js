@@ -1,33 +1,27 @@
 var SmartPicker = (function() {
 
-	// config params (can be passed to init function or via qs):
-	var defaults = {
-		// server url for displaying patients
-		openServerUrl: "./api/fhir", //"https://fhir-open-api-dstu2.smarthealthit.org",
-		// server url for launching
-		apiGatewayUrl: "https://stub-dstu2.smarthealthit.org/api/fhir",
-		// app launch url
-		launchUrl: "", //"https://fhir-dstu2.smarthealthit.org/apps/bp-centiles/launch.html",
-		// comma delimited list of pt ids to limit list - if just one won't show picker
-		limitIds: "",
-		// launch app without a patient (eg. pop health apps)
-		skipPicker: "0", 
-		// patients shown per page
-		pageSize: "10",
-		// launch app in new window (default is to replace picker)
-		newWindow: "0",
-		// show resource id next to pt name (in this mode launching requires clicking the select button)
-		showIds: "0",
-		// default sort param
-		sortParam: "name", 
-		//default sort dir
-		sortDir: "asc"    
-	};
+	/* config params (can be passed to init function or via qs):
+		- openServerUrl: FHIR server url for displaying patients (defaults to ./api/fhir)
+		- apiGatewayUrl: FHIR server url for launching app (no default)
+		- launchUrl: App's OAuth launch url (no default)
+		- limitIds: Comma delimited list of pt ids to limit list - if just one won't show picker (defaults to none)
+		- skipPicker: Launch app without a patient - for use in pop health apps (defaults to false)
+		- pageSize: Patients shown per page (defaults to 10)
+		 "10",
+		- newWindow: Launch app in new window (defaults to false)
+		- showIds: Show resource id next to pt name. In this mode launching requires clicking the select button. (defaults to false)
+		- sortParam: Sort param - name, gender or age (defaults to name)
+		- sortDir: Asc or Desc (defaults to asc)  
+	*/
 
 	var state = {
 		skip: "0",
 		searchText: "",
-		mode: "loading"
+		mode: "loading",
+		pageSize: "10",
+		sortParam: "name", 
+		sortDir: "asc",
+		openServerUrl: "./api/fhir"
 	};
 
 	var getQsParams = function() {
@@ -55,8 +49,8 @@ var SmartPicker = (function() {
 		$("#paging-next, #paging-previous").click(handlePagingClick);
 		$("th").click(handleHeaderClick);
 		$("#search-form").submit(handleSearchSubmit);
-		$("table").on("click", ".patient", handlePatientClick);
 		$("#search-text").focus()
+		$("table").on("click", ".patient", handlePatientClick);
 	}
 
 	var handlePagingClick = function() {
@@ -64,11 +58,11 @@ var SmartPicker = (function() {
 		if ($(this).attr("id") == "paging-previous")
 			dir = -1;
 		state.skip = "" + (parseInt(state.skip) + parseInt(state.pageSize) * dir);
-		loadFhir()
+		loadFhir(dir == 1 ? state.links.next : state.links.previous)
 	}
 
 	var handleHeaderClick = function() {
-		var sortParam = $(this).attr("id").split("-")[2];
+		var sortParam = $(this).attr("id").split("-")[2];		
 		if (sortParam == state.sortParam) {
 			state.sortDir = (state.sortDir == "asc") ? "desc" : "asc";
 		} else {
@@ -79,12 +73,6 @@ var SmartPicker = (function() {
 		loadFhir();
 	}
 
-	var handleSearchSubmit = function(e) {
-		e.preventDefault();
-		state.searchText = $("#search-text").val();
-		loadFhir();
-	}
-
 	var handlePatientClick = function(e) {
 		if (state.launchUrl == "") return;
 
@@ -92,6 +80,12 @@ var SmartPicker = (function() {
 		if (state.showIds != "1" || e.target.tagName == "BUTTON") {
 			launchApp(patientId);
 		}
+	}
+
+	var handleSearchSubmit = function(e) {
+		e.preventDefault();
+		state.searchText = $("#search-text").val();
+		loadFhir();
 	}
 
 	// AJAX
@@ -107,24 +101,34 @@ var SmartPicker = (function() {
 		}
 
 		return state.openServerUrl + 
-			"/Patient/?_format=application/json+fhir" +
-			//"&_summary=true&elements=name,gender,birthDate" +
-			//"&_count=" + state.pageSize +
-			//"&_skip=" + state.skip + 
-			//"&gender:missing=false&birthdate:missing=false&name:missing=false" +
+			"/Patient/?_format=application/json+fhir&_summary=true" +
+			"&_count=" + state.pageSize +
 			(state.limitIds ? "&_id=" + state.limitIds.replace(/\s*/g, "") : "") + 
 			(sortParam ? "&_sort:" + sortDir + "=" + sortParam : "") +
 			(state.searchText != "" ? "&name:contains=" + encodeURIComponent(state.searchText) : "");
 	}
 
-	var loadFhir = function() {
-		var fhirUrl = buildFhirUrl();
+	var getLinks = function(data) {
+		if (!data.link) return {};
+		var links = {};
+		for (var i=0; i<data.link.length; i++) {
+			links[data.link[i].relation] = data.link[i].url;
+		};
+		return links;
+	}
+
+	var loadFhir = function(fhirUrl) {
+		if (!fhirUrl) {
+			fhirUrl = buildFhirUrl();
+			state.skip = 0;
+		}
 		state.mode = "loading";
 		render();
 		$.get(fhirUrl)
 			.done( function(data) {
 				state.data = data;
 				state.mode = "data"
+				state.links = getLinks(data);
 				render();
 			})
 			.fail(function() {
@@ -226,7 +230,7 @@ var SmartPicker = (function() {
 
 		var _renderPaging = function() {
 			$("#paging-from").text(parseInt(state.skip)+1);
-			$("#paging-to").text(state.data.entry.length);
+			$("#paging-to").text(parseInt(state.skip) + state.data.entry.length);
 			$("#paging-total").text(state.data.total);
 			$("#paging-next").toggle(state.data.total > parseInt(state.skip) + state.data.entry.length);
 			$("#paging-previous").toggle(parseInt(state.skip) > 0);
@@ -249,13 +253,13 @@ var SmartPicker = (function() {
 
 	return {
 		init: function(config) {
-			state = _.extend(state, defaults, config, getQsParams());
-			//single id - launch with it
-			if (state.limitIds != "" && state.limitIds.indexOf(",") == -1) {
-				launchApp(state.limitIds)
+			state = _.extend(state, config, getQsParams());
 			//pop health - skip picker
-			} else if (state.skipPicker == "1") {
+			if  (state.skipPicker == "1") {
 				launchApp("")
+			//single id - launch with it
+			} else if (state.limitIds && state.limitIds.indexOf(",") == -1) {
+				launchApp(state.limitIds)
 			//show picker
 			} else {
 				bindUiEvents();
@@ -266,12 +270,3 @@ var SmartPicker = (function() {
 	}
 
 })();
-
-
-
-
-
-
-
-
-

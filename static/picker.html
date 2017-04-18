@@ -5,7 +5,7 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-		<title>SMART Patient Selector</title>
+		<title>SMART Sample Patient Browser</title>
 
 		<link href="./vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
 		<link href="./blue-nav.css" rel="stylesheet">
@@ -17,7 +17,7 @@
 			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 		<![endif]-->
 		<style>
-			th, tr.patient {
+			th {
 				cursor: pointer;
 			}
 			/* initial visibility state */
@@ -50,7 +50,7 @@
 					<img src="./img/smart-bug.png" />
 				</div>
 				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
-					SMART Example EHR System - Patient Selector
+					SMART Sample Patient Browser
 				</a>
 			</div>
 		</div></div>
@@ -74,7 +74,7 @@
 		</form>
 
 		<script type="text/template" id="patient-row-template">
-			<tr class="patient" id="patient-{id}"><td><button class="btn btn-xs btn-default" style="display:{showButton};">select</button>&nbsp;&nbsp;{name}</td><td class="text-center">{gender}</td><td class="text-center">{age}</td></tr>
+			<tr class="patient" id="patient-{id}"><td><button class="btn btn-xs btn-default">select</button>&nbsp;&nbsp;{name}</td><td class="text-center">{gender}</td><td class="text-center">{age}</td></tr>
 		</script>
 
 		<div class="row picker"><div class="col-md-8 col-md-offset-2 col-sm-12">
@@ -102,7 +102,7 @@
 					No patients found.
 				</td></tr>
 
-				<tr id="paging" class="no-hover"><td colspan="3"><div>
+				<tr id="paging" class="no-hover"><td colspan="4"><div>
 					<div class="pull-left" style="padding:8px 0;">
 						<span id="paging-from">1</span> to <span id="paging-to">10</span> of <span id="paging-total">103</span>
 					</div>
